@@ -35,7 +35,7 @@ setg status on
 setg status-justify left
 setg status-left-length 80
 setg status-right-length 80
-setg status-style "fg=$bg,bg=$status_fg"
+setg status-style "fill=$status_fg,fg=$bg,bg=$status_fg"
 setg message-style "fg=$fg,bg=$bg_alt"
 setg message-command-style "fg=$fg,bg=$bg_alt"
 setg pane-border-style "fg=$bg_alt,bg=$bg"
