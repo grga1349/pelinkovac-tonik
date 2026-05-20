@@ -122,9 +122,9 @@ send_shell() {
 hint_shell_command() {
   local label="$1"
   local command="$2"
-  printf 'printf '\''\033[38;5;39m%%s\033[0m\n\n\033[38;5;245m%%s\033[0m\n  \033[38;5;76m%%s\033[0m\n\n'\'' %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
+  printf 'printf '\''\033[38;2;86;156;214m%%s\033[0m\n\n\033[38;2;128;128;128m%%s\033[0m\n  \033[38;2;220;220;170m%%s\033[0m\n\n'\'' %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
     "$(shell_quote "[$label]")" \
-    "$(shell_quote "Start with:")" \
+    "$(shell_quote "start:")" \
     "$(shell_quote "$command")"
 }
 
@@ -132,7 +132,7 @@ ai_hint_command() {
   local tool="$1"
   [[ "$tool" == "none" ]] && return 1
   if [[ "$tool" == "both" ]]; then
-    hint_shell_command "codex / claude" "codex  # or: claude"
+    hint_shell_command "codex / claude" "codex or claude"
     return
   fi
   hint_shell_command "$tool" "$tool"
