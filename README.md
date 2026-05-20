@@ -136,7 +136,7 @@ Light:
 ## Defaults
 
 - Editor: `nvim`
-- AI: one AI pane is created but not launched
+- AI: one `codex/claude` pane is created but neither tool is launched
 - Runner: one runner shell is created but the runner command is not launched
 - Diff: `diffnav`
 - DB window: on by default as a plain shell

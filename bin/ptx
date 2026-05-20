@@ -122,17 +122,19 @@ send_shell() {
 hint_shell_command() {
   local label="$1"
   local command="$2"
-  printf 'printf '\''%%s\\n'\'' %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
-    "$(shell_quote "$label is ready.")" \
-    "$(shell_quote "Run when needed:")" \
-    "$(shell_quote "  $command")"
+  printf 'printf '\''%%s\\n'\'' %s %s %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
+    "$(shell_quote "[$label]")" \
+    "$(shell_quote "")" \
+    "$(shell_quote "Start with:")" \
+    "$(shell_quote "  $command")" \
+    "$(shell_quote "")"
 }
 
 ai_hint_command() {
   local tool="$1"
   [[ "$tool" == "none" ]] && return 1
   if [[ "$tool" == "both" ]]; then
-    hint_shell_command ai "codex or claude"
+    hint_shell_command "codex / claude" "codex  # or: claude"
     return
   fi
   hint_shell_command "$tool" "$tool"
@@ -207,7 +209,7 @@ preset="default"
 project_arg=""
 reset=0
 kill_only=0
-ai="codex"
+ai="both"
 runner="one"
 layout="default"
 db_window=1
@@ -240,10 +242,10 @@ case "$preset" in
     db_window=1; db_run=1
     ;;
   heavy|double)
-    ai="codex"; runner="two"; db_window=1; db_run=1
+    ai="both"; runner="two"; db_window=1; db_run=1
     ;;
   light|lighter)
-    ai="codex"; runner="one"; layout="compact"; db_window=0
+    ai="both"; runner="one"; layout="compact"; db_window=0
     ;;
   ai)
     ai="both"; runner="none"
@@ -255,7 +257,7 @@ case "$preset" in
     ai="none"; runner="none"; db_window=0; db_run=0; diff="none"
     ;;
   classic)
-    ai="codex"; runner="one"
+    ai="both"; runner="one"
     ;;
   default)
     ;;
@@ -349,7 +351,7 @@ tmux select-pane -t "$repo_pane" -T repo
 if [[ "$layout" == "compact" && "$ai" != "none" && "$runner" == "one" ]]; then
   ai_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}' "$(ai_hint_command "$ai")")"
   runner_pane="$(tmux split-window -h -p 50 -t "$ai_pane" -c "$project_dir" -P -F '#{pane_id}' "$(runner_hint_shell_command)")"
-  tmux select-pane -t "$ai_pane" -T ai
+  tmux select-pane -t "$ai_pane" -T codex/claude
   tmux select-pane -t "$runner_pane" -T runner
 elif [[ "$ai" != "none" || "$runner" == "one" ]]; then
   if [[ "$ai" != "none" ]]; then
@@ -357,13 +359,14 @@ elif [[ "$ai" != "none" || "$runner" == "one" ]]; then
   else
     work_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
   fi
-  tmux select-pane -t "$work_pane" -T ai
+  tmux select-pane -t "$work_pane" -T codex/claude
   if [[ "$ai" == "both" && "$runner" != "one" ]]; then
     codex_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}' "$(ai_hint_command codex)")"
     tmux select-pane -t "$work_pane" -T claude
     tmux select-pane -t "$codex_pane" -T codex
   elif [[ "$runner" == "one" ]]; then
     runner_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}' "$(runner_hint_shell_command)")"
+    tmux select-pane -t "$work_pane" -T codex/claude
     tmux select-pane -t "$runner_pane" -T runner
   fi
 fi
