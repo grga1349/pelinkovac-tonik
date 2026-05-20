@@ -119,34 +119,33 @@ send_shell() {
   tmux send-keys -t "$pane" "${SHELL:-/bin/sh} -l" C-m
 }
 
-send_hint_shell() {
-  local pane="$1"
-  local label="$2"
-  local command="$3"
-  tmux send-keys -t "$pane" "printf '%s\n' $(shell_quote "Ready: $label") $(shell_quote "Suggested: $command"); exec \"\${SHELL:-/bin/sh}\" -l" C-m
+hint_shell_command() {
+  local label="$1"
+  local command="$2"
+  printf 'printf '\''%%s\\n'\'' %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
+    "$(shell_quote "$label is ready.")" \
+    "$(shell_quote "Run when needed:")" \
+    "$(shell_quote "  $command")"
 }
 
-send_ai_hint() {
-  local pane="$1"
-  local tool="$2"
-  [[ "$tool" == "none" ]] && return
+ai_hint_command() {
+  local tool="$1"
+  [[ "$tool" == "none" ]] && return 1
   if [[ "$tool" == "both" ]]; then
-    send_hint_shell "$pane" ai "codex or claude"
+    hint_shell_command ai "codex or claude"
     return
   fi
-  send_hint_shell "$pane" "$tool" "$tool"
+  hint_shell_command "$tool" "$tool"
 }
 
-send_runner_hint() {
-  local pane="$1"
+runner_hint_shell_command() {
   local command
   command="$(runner_hint_command)"
-  send_hint_shell "$pane" runner "$command"
+  hint_shell_command runner "$command"
 }
 
-send_db_hint() {
-  local pane="$1"
-  send_hint_shell "$pane" db "$(db_command)"
+db_hint_command() {
+  hint_shell_command database "$(db_command)"
 }
 
 send_editor() {
@@ -348,38 +347,32 @@ tmux select-pane -t "$home_pane" -T home
 tmux select-pane -t "$repo_pane" -T repo
 
 if [[ "$layout" == "compact" && "$ai" != "none" && "$runner" == "one" ]]; then
-  ai_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
-  runner_pane="$(tmux split-window -h -p 50 -t "$ai_pane" -c "$project_dir" -P -F '#{pane_id}')"
+  ai_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}' "$(ai_hint_command "$ai")")"
+  runner_pane="$(tmux split-window -h -p 50 -t "$ai_pane" -c "$project_dir" -P -F '#{pane_id}' "$(runner_hint_shell_command)")"
   tmux select-pane -t "$ai_pane" -T ai
   tmux select-pane -t "$runner_pane" -T runner
-  send_ai_hint "$ai_pane" "$ai"
-  send_runner_hint "$runner_pane"
 elif [[ "$ai" != "none" || "$runner" == "one" ]]; then
-  work_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
+  if [[ "$ai" != "none" ]]; then
+    work_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}' "$(ai_hint_command "$ai")")"
+  else
+    work_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
+  fi
   tmux select-pane -t "$work_pane" -T ai
   if [[ "$ai" == "both" && "$runner" != "one" ]]; then
-    codex_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}')"
+    codex_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}' "$(ai_hint_command codex)")"
     tmux select-pane -t "$work_pane" -T claude
     tmux select-pane -t "$codex_pane" -T codex
-    send_ai_hint "$work_pane" claude
-    send_ai_hint "$codex_pane" codex
   elif [[ "$runner" == "one" ]]; then
-    runner_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}')"
+    runner_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}' "$(runner_hint_shell_command)")"
     tmux select-pane -t "$runner_pane" -T runner
-    send_runner_hint "$runner_pane"
-    send_ai_hint "$work_pane" "$ai"
-  else
-    send_ai_hint "$work_pane" "$ai"
   fi
 fi
 
 if [[ "$runner" == "two" ]]; then
-  run1_pane="$(tmux new-window -t "$session_name:" -n run -c "$project_dir" -P -F '#{pane_id}')"
-  run2_pane="$(tmux split-window -h -p 50 -t "$run1_pane" -c "$project_dir" -P -F '#{pane_id}')"
+  run1_pane="$(tmux new-window -t "$session_name:" -n run -c "$project_dir" -P -F '#{pane_id}' "$(runner_hint_shell_command)")"
+  run2_pane="$(tmux split-window -h -p 50 -t "$run1_pane" -c "$project_dir" -P -F '#{pane_id}' "$(runner_hint_shell_command)")"
   tmux select-pane -t "$run1_pane" -T run
   tmux select-pane -t "$run2_pane" -T run2
-  send_runner_hint "$run1_pane"
-  send_runner_hint "$run2_pane"
 fi
 
 if [[ "$diff" != "none" ]]; then
@@ -393,12 +386,13 @@ tmux select-pane -t "$edit_pane" -T edit
 send_editor "$edit_pane" "$editor"
 
 if [[ "$db_window" -eq 1 ]]; then
-  db_pane="$(tmux new-window -t "$session_name:" -n db -c "$project_dir" -P -F '#{pane_id}')"
-  tmux select-pane -t "$db_pane" -T db
   if [[ "$db_run" -eq 1 ]]; then
+    db_pane="$(tmux new-window -t "$session_name:" -n db -c "$project_dir" -P -F '#{pane_id}')"
+    tmux select-pane -t "$db_pane" -T db
     tmux send-keys -t "$db_pane" "$(db_command)" C-m
   else
-    send_db_hint "$db_pane"
+    db_pane="$(tmux new-window -t "$session_name:" -n db -c "$project_dir" -P -F '#{pane_id}' "$(db_hint_command)")"
+    tmux select-pane -t "$db_pane" -T db
   fi
 fi
 
