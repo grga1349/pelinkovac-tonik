@@ -163,6 +163,6 @@ See [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 ## Bundled Config
 
 - `config/nvim/init.lua`: VS Code Dark+ Neovim with file tree, Telescope file search, `jj`, Go/JS/TS/templ support, and a 120-column guide
-- `config/tmux/tmux.conf`: tmux prefix, pane navigation, mouse scrolling, large history, VS Code Dark+ status theme
+- `config/tmux/tmux.conf`: tmux prefix, window/pane navigation, mouse scrolling, large history, VS Code Dark+ status theme
 - `config/tmux/vscode-dark-plus.tmux`: tmux theme
 - `config/ghostty/config`: Ghostty VS Code Dark+ palette
