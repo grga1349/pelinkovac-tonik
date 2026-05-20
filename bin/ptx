@@ -1,0 +1,361 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_dir="$(cd "$script_dir/.." && pwd)"
+
+print_help() {
+  cat <<'EOF'
+ptx / pelinkovac-tonik
+
+Usage:
+  ptx [preset] [options] [project-dir]
+
+Presets:
+  ptx            default workspace: term, agent, diff, edit
+  ptx short      shell + editor only
+  ptx full       default + db
+  ptx heavy      two AI panes + two runners + db
+  ptx ai         codex + claude mode
+  ptx run2       two runner mode
+  ptx db         default + db
+
+Fun aliases:
+  ptx dry        short
+  ptx classic    default
+  ptx strong     full
+  ptx double     heavy
+  ptx neat       term + edit, no AI, no runner
+
+Options:
+  --ai codex|claude|both|none
+  --runner none|one|two
+  --db
+  --no-db
+  --editor nvim|hx|none
+  --diff lazygit|delta|none
+  --reset        recreate the tmux session
+  --kill         kill the tmux session and exit
+  --keys         print tmux and Neovim keybindings
+  -h, --help     show this help
+
+Window names:
+  term, agent, run, diff, edit, db
+EOF
+}
+
+print_keys() {
+  cat "$repo_dir/docs/KEYBINDINGS.md"
+}
+
+die() {
+  printf 'ptx: %s\n' "$*" >&2
+  exit 2
+}
+
+have() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+shell_quote() {
+  printf '%q' "$1"
+}
+
+detect_root() {
+  local start="${1:-$PWD}"
+  start="$(cd "$start" && pwd)"
+  if git -C "$start" rev-parse --show-toplevel >/dev/null 2>&1; then
+    git -C "$start" rev-parse --show-toplevel
+  else
+    printf '%s\n' "$start"
+  fi
+}
+
+runner_command() {
+  cat <<'EOF'
+if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then . "${NVM_DIR:-$HOME/.nvm}/nvm.sh"; if [ -f .nvmrc ]; then nvm use --silent; fi; fi
+if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
+  npm run dev
+elif [ -f go.mod ] && command -v go >/dev/null 2>&1; then
+  go run .
+elif [ -f Makefile ] || [ -f makefile ]; then
+  make
+else
+  printf '%s\n' 'No runner detected. Tried package.json, go.mod, Makefile.'
+  exec "${SHELL:-/bin/sh}" -l
+fi
+EOF
+}
+
+db_command() {
+  local url="${DATABASE_URL:-}"
+  if have rainfrog; then
+    if [[ -n "$url" ]]; then
+      printf 'rainfrog --url %s' "$(shell_quote "$url")"
+    else
+      printf 'rainfrog'
+    fi
+  elif have pgcli; then
+    if [[ -n "$url" ]]; then
+      printf 'pgcli %s' "$(shell_quote "$url")"
+    else
+      printf 'pgcli'
+    fi
+  elif have psql; then
+    if [[ -n "$url" ]]; then
+      printf 'psql %s' "$(shell_quote "$url")"
+    else
+      printf 'psql'
+    fi
+  else
+    printf "printf '%%s\\n' 'No DB client found. Install rainfrog, pgcli, or psql.'; exec \"${SHELL:-/bin/sh}\" -l"
+  fi
+}
+
+send_shell() {
+  local pane="$1"
+  tmux send-keys -t "$pane" "${SHELL:-/bin/sh} -l" C-m
+}
+
+send_ai() {
+  local pane="$1"
+  local tool="$2"
+  case "$tool" in
+    codex|claude)
+      if have "$tool"; then
+        tmux send-keys -t "$pane" "$tool" C-m
+      else
+        tmux send-keys -t "$pane" "printf '%s\n' '$tool not found on PATH.'; exec \"\${SHELL:-/bin/sh}\" -l" C-m
+      fi
+      ;;
+    none)
+      send_shell "$pane"
+      ;;
+  esac
+}
+
+send_editor() {
+  local pane="$1"
+  local editor="$2"
+  case "$editor" in
+    nvim|hx)
+      if have "$editor"; then
+        tmux send-keys -t "$pane" "$editor ." C-m
+      else
+        tmux send-keys -t "$pane" "printf '%s\n' '$editor not found on PATH.'; exec \"\${SHELL:-/bin/sh}\" -l" C-m
+      fi
+      ;;
+    none)
+      send_shell "$pane"
+      ;;
+  esac
+}
+
+send_diff() {
+  local pane="$1"
+  local diff="$2"
+  case "$diff" in
+    lazygit)
+      if have lazygit; then
+        tmux send-keys -t "$pane" lazygit C-m
+      else
+        tmux send-keys -t "$pane" "git status --short; exec \"\${SHELL:-/bin/sh}\" -l" C-m
+      fi
+      ;;
+    delta)
+      if have delta; then
+        tmux send-keys -t "$pane" "while true; do clear; git diff --color=always | delta; sleep 2; done" C-m
+      else
+        tmux send-keys -t "$pane" "while true; do clear; git diff --color=always; sleep 2; done" C-m
+      fi
+      ;;
+    none)
+      send_shell "$pane"
+      ;;
+  esac
+}
+
+preset="default"
+project_arg=""
+reset=0
+kill_only=0
+ai="codex"
+runner="one"
+db=0
+editor="nvim"
+diff="lazygit"
+
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    short|full|heavy|ai|run2|db|dry|classic|strong|double|neat)
+      preset="$1"
+      shift
+      ;;
+  esac
+fi
+
+case "$preset" in
+  short|dry)
+    ai="none"; runner="none"; db=0; diff="none"
+    ;;
+  full|strong|db)
+    db=1
+    ;;
+  heavy|double)
+    ai="both"; runner="two"; db=1
+    ;;
+  ai)
+    ai="both"
+    ;;
+  run2)
+    runner="two"
+    ;;
+  neat)
+    ai="none"; runner="none"; db=0; diff="none"
+    ;;
+  classic|default)
+    ;;
+esac
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ai)
+      ai="${2:-}"
+      [[ "$ai" =~ ^(codex|claude|both|none)$ ]] || die "--ai must be codex, claude, both, or none"
+      shift 2
+      ;;
+    --runner)
+      runner="${2:-}"
+      [[ "$runner" =~ ^(none|one|two)$ ]] || die "--runner must be none, one, or two"
+      shift 2
+      ;;
+    --db)
+      db=1
+      shift
+      ;;
+    --no-db)
+      db=0
+      shift
+      ;;
+    --editor)
+      editor="${2:-}"
+      [[ "$editor" =~ ^(nvim|hx|none)$ ]] || die "--editor must be nvim, hx, or none"
+      shift 2
+      ;;
+    --diff)
+      diff="${2:-}"
+      [[ "$diff" =~ ^(lazygit|delta|none)$ ]] || die "--diff must be lazygit, delta, or none"
+      shift 2
+      ;;
+    --reset)
+      reset=1
+      shift
+      ;;
+    --kill)
+      kill_only=1
+      shift
+      ;;
+    --keys)
+      print_keys
+      exit 0
+      ;;
+    -h|--help)
+      print_help
+      exit 0
+      ;;
+    -*)
+      die "unknown option $1"
+      ;;
+    *)
+      [[ -z "$project_arg" ]] || die "only one project-dir is supported"
+      project_arg="$1"
+      shift
+      ;;
+  esac
+done
+
+project_dir="$(detect_root "${project_arg:-$PWD}")"
+session_name="$(basename "$project_dir")"
+
+if [[ "$kill_only" -eq 1 ]]; then
+  tmux kill-session -t "$session_name" 2>/dev/null || true
+  exit 0
+fi
+
+if [[ "$reset" -eq 1 ]]; then
+  tmux kill-session -t "$session_name" 2>/dev/null || true
+fi
+
+if tmux has-session -t "$session_name" 2>/dev/null; then
+  if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "$session_name"
+  else
+    tmux attach-session -t "$session_name"
+  fi
+  exit 0
+fi
+
+home_pane="$(tmux new-session -d -s "$session_name" -n term -c "$HOME" -P -F '#{pane_id}')"
+repo_pane="$(tmux split-window -h -p 50 -t "$home_pane" -c "$project_dir" -P -F '#{pane_id}')"
+tmux select-pane -t "$home_pane" -T home
+tmux select-pane -t "$repo_pane" -T repo
+
+if [[ "$ai" != "none" || "$runner" != "none" ]]; then
+  agent_pane="$(tmux new-window -t "$session_name:" -n agent -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$agent_pane" -T agent
+  if [[ "$ai" == "both" ]]; then
+    claude_pane="$agent_pane"
+    codex_pane="$(tmux split-window -h -p 50 -t "$claude_pane" -c "$project_dir" -P -F '#{pane_id}')"
+    tmux select-pane -t "$claude_pane" -T claude
+    tmux select-pane -t "$codex_pane" -T codex
+    send_ai "$claude_pane" claude
+    send_ai "$codex_pane" codex
+  elif [[ "$ai" == "codex" || "$ai" == "claude" ]]; then
+    if [[ "$runner" != "one" ]]; then
+      send_ai "$agent_pane" "$ai"
+    else
+      run_pane="$(tmux split-window -h -p 50 -t "$agent_pane" -c "$project_dir" -P -F '#{pane_id}')"
+      tmux select-pane -t "$agent_pane" -T "$ai"
+      tmux select-pane -t "$run_pane" -T run
+      send_ai "$agent_pane" "$ai"
+      tmux send-keys -t "$run_pane" "$(runner_command)" C-m
+    fi
+  elif [[ "$runner" == "one" ]]; then
+    tmux select-pane -t "$agent_pane" -T run
+    tmux send-keys -t "$agent_pane" "$(runner_command)" C-m
+  fi
+fi
+
+if [[ "$runner" == "two" ]]; then
+  run1_pane="$(tmux new-window -t "$session_name:" -n run -c "$project_dir" -P -F '#{pane_id}')"
+  run2_pane="$(tmux split-window -h -p 50 -t "$run1_pane" -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$run1_pane" -T run
+  tmux select-pane -t "$run2_pane" -T run2
+  tmux send-keys -t "$run1_pane" "$(runner_command)" C-m
+  tmux send-keys -t "$run2_pane" "$(runner_command)" C-m
+fi
+
+if [[ "$diff" != "none" ]]; then
+  diff_pane="$(tmux new-window -t "$session_name:" -n diff -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$diff_pane" -T diff
+  send_diff "$diff_pane" "$diff"
+fi
+
+edit_pane="$(tmux new-window -t "$session_name:" -n edit -c "$project_dir" -P -F '#{pane_id}')"
+tmux select-pane -t "$edit_pane" -T edit
+send_editor "$edit_pane" "$editor"
+
+if [[ "$db" -eq 1 ]]; then
+  db_pane="$(tmux new-window -t "$session_name:" -n db -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$db_pane" -T db
+  tmux send-keys -t "$db_pane" "$(db_command)" C-m
+fi
+
+tmux select-window -t "$session_name:term"
+tmux select-pane -t "$repo_pane"
+
+if [[ -n "${TMUX:-}" ]]; then
+  tmux switch-client -t "$session_name"
+else
+  tmux attach-session -t "$session_name"
+fi

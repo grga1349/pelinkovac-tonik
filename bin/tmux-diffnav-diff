@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  exit 0
+fi
+
+git diff --no-ext-diff --src-prefix=a/ --dst-prefix=b/ HEAD -- . || true
+
+git ls-files --others --exclude-standard -z | while IFS= read -r -d '' file; do
+  git diff --no-ext-diff --no-index --src-prefix=a/ --dst-prefix=b/ -- /dev/null "$file" || true
+done

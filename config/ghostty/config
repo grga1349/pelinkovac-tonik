@@ -1,0 +1,66 @@
+# This is the configuration file for Ghostty.
+#
+# This template file has been automatically created at the following
+# path since Ghostty couldn't find any existing config files on your system:
+#
+#   /Users/ivangrga/Library/Application Support/com.mitchellh.ghostty/config
+#
+# The template does not set any default options, since Ghostty ships
+# with sensible defaults for all options. Users should only need to set
+# options that they want to change from the default.
+#
+# Run `ghostty +show-config --default --docs` to view a list of
+# all available config options and their default values.
+#
+# Additionally, each config option is also explained in detail
+# on Ghostty's website, at https://ghostty.org/docs/config.
+
+# Config syntax crash course
+# ==========================
+# # The config file consists of simple key-value pairs,
+# # separated by equals signs.
+# font-family = Iosevka
+# window-padding-x = 2
+#
+# # Spacing around the equals sign does not matter.
+# # All of these are identical:
+# key=value
+# key= value
+# key =value
+# key = value
+#
+# # Any line beginning with a # is a comment. It's not possible to put
+# # a comment after a config option, since it would be interpreted as a
+# # part of the value. For example, this will have a value of "#123abc":
+# background = #123abc
+#
+# # Empty values are used to reset config keys to default.
+# key =
+#
+# # Some config options have unique syntaxes for their value,
+# # which is explained in the docs for that config option.
+# # Just for example:
+# resize-overlay-duration = 4s 200ms
+
+font-size=16
+theme=Dark+
+background=#1e1e1e
+foreground=#d4d4d4
+selection-background=#264f78
+selection-foreground=#ffffff
+palette=0=#1e1e1e
+palette=1=#f44747
+palette=2=#6a9955
+palette=3=#dcdcaa
+palette=4=#569cd6
+palette=5=#c586c0
+palette=6=#9cdcfe
+palette=7=#d4d4d4
+palette=8=#808080
+palette=9=#f44747
+palette=10=#6a9955
+palette=11=#dcdcaa
+palette=12=#569cd6
+palette=13=#c586c0
+palette=14=#9cdcfe
+palette=15=#ffffff
