@@ -30,6 +30,19 @@
 - Code action: `Space c a`
 - Format: `Space f`
 
+## rainfrog
+
+- Focus menu: `Ctrl-k`
+- Focus editor: `Ctrl-j`
+- Focus results: `Ctrl-h`
+- Focus history: `Ctrl-g`
+- Focus favorites: `Ctrl-m`
+- Cycle focus forward/back: `Tab`, `Shift-Tab`
+- Execute query: `Ctrl-Enter`
+- Execute query (bypass parser): `Alt-Enter`
+- Abort query: `Alt-q` (editor), `q` (other panes)
+- Quit: `Ctrl-c`
+
 ## ptx
 
 - Show help: `ptx help`, `ptx --help`

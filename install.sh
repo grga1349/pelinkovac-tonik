@@ -95,9 +95,11 @@ install_configs() {
   case "$(uname -s)" in
     Darwin)
       install_file "$repo_dir/config/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+      install_file "$repo_dir/config/rainfrog/rainfrog_config.toml" "$HOME/Library/Application Support/dev.rainfrog.rainfrog/rainfrog_config.toml"
       ;;
     Linux)
       install_file "$repo_dir/config/ghostty/config" "$HOME/.config/ghostty/config"
+      install_file "$repo_dir/config/rainfrog/rainfrog_config.toml" "$HOME/.config/rainfrog/rainfrog_config.toml"
       ;;
   esac
 }
