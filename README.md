@@ -141,6 +141,7 @@ Light:
 - Diff: `diffnav`
 - DB window: on by default as a plain shell
 - DB client: off unless using `full`, `heavy`, `db`, or `--db`
+- Idle AI, runner, and DB panes print the suggested command and then leave you in a shell
 
 DB client preference:
 

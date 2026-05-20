@@ -11,7 +11,7 @@
 - Select windows: `Alt-1` through `Alt-6`
 - Resize panes: `Ctrl-j Ctrl-h`, `Ctrl-j Ctrl-j`, `Ctrl-j Ctrl-k`, `Ctrl-j Ctrl-l`
 - Mouse scroll: enabled
-- Shift-Enter: forwarded as an extended key sequence for terminal apps that support multiline submit
+- Shift-Enter: sends the extended Enter sequence used by Codex for multiline input
 
 ## Neovim
 

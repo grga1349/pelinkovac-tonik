@@ -102,13 +102,51 @@ db_command() {
   fi
 }
 
+runner_hint_command() {
+  if [[ -f "$project_dir/package.json" ]]; then
+    printf 'npm run dev'
+  elif [[ -f "$project_dir/go.mod" ]]; then
+    printf 'go run .'
+  elif [[ -f "$project_dir/Makefile" || -f "$project_dir/makefile" ]]; then
+    printf 'make'
+  else
+    printf 'no runner detected'
+  fi
+}
+
 send_shell() {
   local pane="$1"
   tmux send-keys -t "$pane" "${SHELL:-/bin/sh} -l" C-m
 }
 
-send_ai_shell() {
-  :
+send_hint_shell() {
+  local pane="$1"
+  local label="$2"
+  local command="$3"
+  tmux send-keys -t "$pane" "printf '%s\n' $(shell_quote "Ready: $label") $(shell_quote "Suggested: $command"); exec \"\${SHELL:-/bin/sh}\" -l" C-m
+}
+
+send_ai_hint() {
+  local pane="$1"
+  local tool="$2"
+  [[ "$tool" == "none" ]] && return
+  if [[ "$tool" == "both" ]]; then
+    send_hint_shell "$pane" ai "codex or claude"
+    return
+  fi
+  send_hint_shell "$pane" "$tool" "$tool"
+}
+
+send_runner_hint() {
+  local pane="$1"
+  local command
+  command="$(runner_hint_command)"
+  send_hint_shell "$pane" runner "$command"
+}
+
+send_db_hint() {
+  local pane="$1"
+  send_hint_shell "$pane" db "$(db_command)"
 }
 
 send_editor() {
@@ -203,7 +241,7 @@ case "$preset" in
     db_window=1; db_run=1
     ;;
   heavy|double)
-    ai="both"; runner="two"; db_window=1; db_run=1
+    ai="codex"; runner="two"; db_window=1; db_run=1
     ;;
   light|lighter)
     ai="codex"; runner="one"; layout="compact"; db_window=0
@@ -314,15 +352,25 @@ if [[ "$layout" == "compact" && "$ai" != "none" && "$runner" == "one" ]]; then
   runner_pane="$(tmux split-window -h -p 50 -t "$ai_pane" -c "$project_dir" -P -F '#{pane_id}')"
   tmux select-pane -t "$ai_pane" -T ai
   tmux select-pane -t "$runner_pane" -T runner
-  send_ai_shell "$ai_pane" "$ai"
+  send_ai_hint "$ai_pane" "$ai"
+  send_runner_hint "$runner_pane"
 elif [[ "$ai" != "none" || "$runner" == "one" ]]; then
   work_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
   tmux select-pane -t "$work_pane" -T ai
-  if [[ "$runner" == "one" ]]; then
+  if [[ "$ai" == "both" && "$runner" != "one" ]]; then
+    codex_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}')"
+    tmux select-pane -t "$work_pane" -T claude
+    tmux select-pane -t "$codex_pane" -T codex
+    send_ai_hint "$work_pane" claude
+    send_ai_hint "$codex_pane" codex
+  elif [[ "$runner" == "one" ]]; then
     runner_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}')"
     tmux select-pane -t "$runner_pane" -T runner
+    send_runner_hint "$runner_pane"
+    send_ai_hint "$work_pane" "$ai"
+  else
+    send_ai_hint "$work_pane" "$ai"
   fi
-  send_ai_shell "$work_pane" "$ai"
 fi
 
 if [[ "$runner" == "two" ]]; then
@@ -330,6 +378,8 @@ if [[ "$runner" == "two" ]]; then
   run2_pane="$(tmux split-window -h -p 50 -t "$run1_pane" -c "$project_dir" -P -F '#{pane_id}')"
   tmux select-pane -t "$run1_pane" -T run
   tmux select-pane -t "$run2_pane" -T run2
+  send_runner_hint "$run1_pane"
+  send_runner_hint "$run2_pane"
 fi
 
 if [[ "$diff" != "none" ]]; then
@@ -347,6 +397,8 @@ if [[ "$db_window" -eq 1 ]]; then
   tmux select-pane -t "$db_pane" -T db
   if [[ "$db_run" -eq 1 ]]; then
     tmux send-keys -t "$db_pane" "$(db_command)" C-m
+  else
+    send_db_hint "$db_pane"
   fi
 fi
 
