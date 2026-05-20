@@ -7,7 +7,7 @@
 - Split right: `Ctrl-j |`
 - Split down: `Ctrl-j _`
 - Previous/next window: `Alt-h`, `Alt-l`
-- Move panes up/down: `Alt-j`, `Alt-k`
+- Move panes left/right: `Alt-j`, `Alt-k`
 - Select windows: `Alt-1` through `Alt-6`
 - Resize panes: `Ctrl-j Ctrl-h`, `Ctrl-j Ctrl-j`, `Ctrl-j Ctrl-k`, `Ctrl-j Ctrl-l`
 - Mouse scroll: enabled
