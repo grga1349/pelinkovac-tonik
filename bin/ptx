@@ -16,19 +16,21 @@ Commands:
   ptx keys       print tmux and Neovim keybindings
 
 Presets:
-  ptx            default workspace: term, agent, diff, edit, db shell
+  ptx            default workspace: work, ai, diff, edit, db shell
   ptx short      shell + editor only
   ptx full       default + running db client
   ptx heavy      two AI panes + two runners + running db client
   ptx ai         codex + claude mode
   ptx run2       two runner mode
   ptx db         default + running db client
+  ptx light      compact work tab with AI + runner shells
 
 Fun aliases:
   ptx dry        short
-  ptx classic    legacy default with Codex and one runner
+  ptx classic    legacy default with Codex pane and one runner
   ptx strong     full
   ptx double     heavy
+  ptx lighter    light
   ptx neat       term + edit, no AI, no runner
 
 Options:
@@ -37,14 +39,14 @@ Options:
   --db           create db window and start a db client
   --no-db        skip db window
   --editor nvim|hx|none
-  --diff lazygit|delta|none
+  --diff diffnav|lazygit|delta|none
   --reset        recreate the tmux session
   --kill         kill the tmux session and exit
   --keys         print tmux and Neovim keybindings
   -h, --help     show this help
 
 Window names:
-  term, agent, run, diff, edit, db
+  work, ai, run, diff, edit, db
 EOF
 }
 
@@ -73,22 +75,6 @@ detect_root() {
   else
     printf '%s\n' "$start"
   fi
-}
-
-runner_command() {
-  cat <<'EOF'
-if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then . "${NVM_DIR:-$HOME/.nvm}/nvm.sh"; if [ -f .nvmrc ]; then nvm use --silent; fi; fi
-if [ -f package.json ] && command -v npm >/dev/null 2>&1; then
-  npm run dev
-elif [ -f go.mod ] && command -v go >/dev/null 2>&1; then
-  go run .
-elif [ -f Makefile ] || [ -f makefile ]; then
-  make
-else
-  printf '%s\n' 'No runner detected. Tried package.json, go.mod, Makefile.'
-  exec "${SHELL:-/bin/sh}" -l
-fi
-EOF
 }
 
 db_command() {
@@ -121,27 +107,8 @@ send_shell() {
   tmux send-keys -t "$pane" "${SHELL:-/bin/sh} -l" C-m
 }
 
-send_ai() {
-  local pane="$1"
-  local tool="$2"
-  case "$tool" in
-    codex|claude)
-      if have "$tool"; then
-        tmux send-keys -t "$pane" "$tool" C-m
-      else
-        tmux send-keys -t "$pane" "printf '%s\n' '$tool not found on PATH.'; exec \"\${SHELL:-/bin/sh}\" -l" C-m
-      fi
-      ;;
-    none)
-      send_shell "$pane"
-      ;;
-  esac
-}
-
 send_ai_shell() {
-  local pane="$1"
-  local tool="$2"
-  tmux send-keys -t "$pane" "printf '%s\n' '$tool ready. Run $tool when you want to start it.'; exec \"\${SHELL:-/bin/sh}\" -l" C-m
+  :
 }
 
 send_editor() {
@@ -165,6 +132,13 @@ send_diff() {
   local pane="$1"
   local diff="$2"
   case "$diff" in
+    diffnav)
+      if have diffnav; then
+        tmux send-keys -t "$pane" "diffnav --watch --watch-cmd $(shell_quote "$repo_dir/bin/tmux-diffnav-diff") --watch-interval 1s" C-m
+      else
+        tmux send-keys -t "$pane" "printf '%s\n' 'diffnav not found on PATH.'; exec \"\${SHELL:-/bin/sh}\" -l" C-m
+      fi
+      ;;
     lazygit)
       if have lazygit; then
         tmux send-keys -t "$pane" lazygit C-m
@@ -196,13 +170,13 @@ preset="default"
 project_arg=""
 reset=0
 kill_only=0
-ai="codex"
-ai_run=0
+ai="both"
 runner="one"
+layout="default"
 db_window=1
 db_run=0
 editor="nvim"
-diff="lazygit"
+diff="diffnav"
 
 if [[ $# -gt 0 ]]; then
   case "$1" in
@@ -214,7 +188,7 @@ if [[ $# -gt 0 ]]; then
       print_keys
       exit 0
       ;;
-    short|full|heavy|ai|run2|db|dry|classic|strong|double|neat)
+    short|full|heavy|ai|run2|db|dry|classic|strong|double|light|lighter|neat)
       preset="$1"
       shift
       ;;
@@ -229,10 +203,13 @@ case "$preset" in
     db_window=1; db_run=1
     ;;
   heavy|double)
-    ai="both"; ai_run=1; runner="two"; db_window=1; db_run=1
+    ai="both"; runner="two"; db_window=1; db_run=1
+    ;;
+  light|lighter)
+    ai="codex"; runner="one"; layout="compact"; db_window=0
     ;;
   ai)
-    ai="both"; ai_run=1; runner="none"
+    ai="both"; runner="none"
     ;;
   run2)
     ai="none"; runner="two"
@@ -241,7 +218,7 @@ case "$preset" in
     ai="none"; runner="none"; db_window=0; db_run=0; diff="none"
     ;;
   classic)
-    ai="codex"; ai_run=1; runner="one"
+    ai="codex"; runner="one"
     ;;
   default)
     ;;
@@ -252,7 +229,6 @@ while [[ $# -gt 0 ]]; do
     --ai)
       ai="${2:-}"
       [[ "$ai" =~ ^(codex|claude|both|none)$ ]] || die "--ai must be codex, claude, both, or none"
-      [[ "$ai" == "none" ]] || ai_run=1
       shift 2
       ;;
     --runner)
@@ -277,7 +253,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --diff)
       diff="${2:-}"
-      [[ "$diff" =~ ^(lazygit|delta|none)$ ]] || die "--diff must be lazygit, delta, or none"
+      [[ "$diff" =~ ^(diffnav|lazygit|delta|none)$ ]] || die "--diff must be diffnav, lazygit, delta, or none"
       shift 2
       ;;
     --reset)
@@ -328,47 +304,27 @@ if tmux has-session -t "$session_name" 2>/dev/null; then
   exit 0
 fi
 
-home_pane="$(tmux new-session -d -s "$session_name" -n term -c "$HOME" -P -F '#{pane_id}')"
+home_pane="$(tmux new-session -d -s "$session_name" -n work -c "$project_dir" -P -F '#{pane_id}')"
 repo_pane="$(tmux split-window -h -p 50 -t "$home_pane" -c "$project_dir" -P -F '#{pane_id}')"
-tmux select-pane -t "$home_pane" -T home
-tmux select-pane -t "$repo_pane" -T repo
+tmux select-pane -t "$home_pane" -T git
+tmux select-pane -t "$repo_pane" -T run
 
-if [[ "$ai" != "none" || "$runner" != "none" ]]; then
-  agent_pane="$(tmux new-window -t "$session_name:" -n agent -c "$project_dir" -P -F '#{pane_id}')"
-  tmux select-pane -t "$agent_pane" -T agent
+if [[ "$layout" == "compact" && "$ai" != "none" && "$runner" == "one" ]]; then
+  ai_pane="$(tmux split-window -v -p 50 -t "$home_pane" -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$ai_pane" -T "$ai"
+  send_ai_shell "$ai_pane" "$ai"
+elif [[ "$ai" != "none" ]]; then
+  agent_pane="$(tmux new-window -t "$session_name:" -n ai -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$agent_pane" -T ai
   if [[ "$ai" == "both" ]]; then
     claude_pane="$agent_pane"
     codex_pane="$(tmux split-window -h -p 50 -t "$claude_pane" -c "$project_dir" -P -F '#{pane_id}')"
     tmux select-pane -t "$claude_pane" -T claude
     tmux select-pane -t "$codex_pane" -T codex
-    if [[ "$ai_run" -eq 1 ]]; then
-      send_ai "$claude_pane" claude
-      send_ai "$codex_pane" codex
-    else
-      send_ai_shell "$claude_pane" claude
-      send_ai_shell "$codex_pane" codex
-    fi
+    send_ai_shell "$claude_pane" claude
+    send_ai_shell "$codex_pane" codex
   elif [[ "$ai" == "codex" || "$ai" == "claude" ]]; then
-    if [[ "$runner" != "one" ]]; then
-      if [[ "$ai_run" -eq 1 ]]; then
-        send_ai "$agent_pane" "$ai"
-      else
-        send_ai_shell "$agent_pane" "$ai"
-      fi
-    else
-      run_pane="$(tmux split-window -h -p 50 -t "$agent_pane" -c "$project_dir" -P -F '#{pane_id}')"
-      tmux select-pane -t "$agent_pane" -T "$ai"
-      tmux select-pane -t "$run_pane" -T run
-      if [[ "$ai_run" -eq 1 ]]; then
-        send_ai "$agent_pane" "$ai"
-      else
-        send_ai_shell "$agent_pane" "$ai"
-      fi
-      tmux send-keys -t "$run_pane" "$(runner_command)" C-m
-    fi
-  elif [[ "$runner" == "one" ]]; then
-    tmux select-pane -t "$agent_pane" -T run
-    tmux send-keys -t "$agent_pane" "$(runner_command)" C-m
+    send_ai_shell "$agent_pane" "$ai"
   fi
 fi
 
@@ -377,8 +333,6 @@ if [[ "$runner" == "two" ]]; then
   run2_pane="$(tmux split-window -h -p 50 -t "$run1_pane" -c "$project_dir" -P -F '#{pane_id}')"
   tmux select-pane -t "$run1_pane" -T run
   tmux select-pane -t "$run2_pane" -T run2
-  tmux send-keys -t "$run1_pane" "$(runner_command)" C-m
-  tmux send-keys -t "$run2_pane" "$(runner_command)" C-m
 fi
 
 if [[ "$diff" != "none" ]]; then
@@ -396,12 +350,10 @@ if [[ "$db_window" -eq 1 ]]; then
   tmux select-pane -t "$db_pane" -T db
   if [[ "$db_run" -eq 1 ]]; then
     tmux send-keys -t "$db_pane" "$(db_command)" C-m
-  else
-    send_shell "$db_pane"
   fi
 fi
 
-tmux select-window -t "$session_name:term"
+tmux select-window -t "$session_name:work"
 tmux select-pane -t "$repo_pane"
 
 if [[ -n "${TMUX:-}" ]]; then

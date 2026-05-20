@@ -14,17 +14,19 @@ presets=(
   'ai:codex and claude mode'
   'run2:two runner mode'
   'db:default layout with running DB client'
+  'light:compact work tab with AI and runner shells'
   'dry:alias for short'
-  'classic:legacy default with Codex and one runner'
+  'classic:legacy default with Codex pane and one runner'
   'strong:alias for full'
   'double:alias for heavy'
+  'lighter:alias for light'
   'neat:term and edit only'
 )
 
 ai_modes=(codex claude both none)
 runner_modes=(none one two)
 editors=(nvim hx none)
-diff_modes=(lazygit delta none)
+diff_modes=(diffnav lazygit delta none)
 
 options=(
   '--ai[set AI pane mode]:mode:(${ai_modes[*]})'

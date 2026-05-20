@@ -12,6 +12,7 @@ recommended=(
   go
   npm
   tree-sitter
+  diffnav
   lazygit
   delta
   psql
