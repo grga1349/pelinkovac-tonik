@@ -16,7 +16,7 @@ Commands:
   ptx keys       print tmux and Neovim keybindings
 
 Presets:
-  ptx            default workspace: term, diff, edit, db shell
+  ptx            default workspace: term, agent, diff, edit, db shell
   ptx short      shell + editor only
   ptx full       default + running db client
   ptx heavy      two AI panes + two runners + running db client
@@ -138,6 +138,12 @@ send_ai() {
   esac
 }
 
+send_ai_shell() {
+  local pane="$1"
+  local tool="$2"
+  tmux send-keys -t "$pane" "printf '%s\n' '$tool ready. Run $tool when you want to start it.'; exec \"\${SHELL:-/bin/sh}\" -l" C-m
+}
+
 send_editor() {
   local pane="$1"
   local editor="$2"
@@ -179,12 +185,20 @@ send_diff() {
   esac
 }
 
+safe_session_name() {
+  local name="$1"
+  name="${name//[^A-Za-z0-9_-]/_}"
+  [[ -n "$name" ]] || name="ptx"
+  printf '%s\n' "$name"
+}
+
 preset="default"
 project_arg=""
 reset=0
 kill_only=0
-ai="none"
-runner="none"
+ai="codex"
+ai_run=0
+runner="one"
 db_window=1
 db_run=0
 editor="nvim"
@@ -215,19 +229,19 @@ case "$preset" in
     db_window=1; db_run=1
     ;;
   heavy|double)
-    ai="both"; runner="two"; db_window=1; db_run=1
+    ai="both"; ai_run=1; runner="two"; db_window=1; db_run=1
     ;;
   ai)
-    ai="both"
+    ai="both"; ai_run=1; runner="none"
     ;;
   run2)
-    runner="two"
+    ai="none"; runner="two"
     ;;
   neat)
     ai="none"; runner="none"; db_window=0; db_run=0; diff="none"
     ;;
   classic)
-    ai="codex"; runner="one"
+    ai="codex"; ai_run=1; runner="one"
     ;;
   default)
     ;;
@@ -238,6 +252,7 @@ while [[ $# -gt 0 ]]; do
     --ai)
       ai="${2:-}"
       [[ "$ai" =~ ^(codex|claude|both|none)$ ]] || die "--ai must be codex, claude, both, or none"
+      [[ "$ai" == "none" ]] || ai_run=1
       shift 2
       ;;
     --runner)
@@ -293,7 +308,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 project_dir="$(detect_root "${project_arg:-$PWD}")"
-session_name="$(basename "$project_dir")"
+session_name="$(safe_session_name "$(basename "$project_dir")")"
 
 if [[ "$kill_only" -eq 1 ]]; then
   tmux kill-session -t "$session_name" 2>/dev/null || true
@@ -326,16 +341,29 @@ if [[ "$ai" != "none" || "$runner" != "none" ]]; then
     codex_pane="$(tmux split-window -h -p 50 -t "$claude_pane" -c "$project_dir" -P -F '#{pane_id}')"
     tmux select-pane -t "$claude_pane" -T claude
     tmux select-pane -t "$codex_pane" -T codex
-    send_ai "$claude_pane" claude
-    send_ai "$codex_pane" codex
+    if [[ "$ai_run" -eq 1 ]]; then
+      send_ai "$claude_pane" claude
+      send_ai "$codex_pane" codex
+    else
+      send_ai_shell "$claude_pane" claude
+      send_ai_shell "$codex_pane" codex
+    fi
   elif [[ "$ai" == "codex" || "$ai" == "claude" ]]; then
     if [[ "$runner" != "one" ]]; then
-      send_ai "$agent_pane" "$ai"
+      if [[ "$ai_run" -eq 1 ]]; then
+        send_ai "$agent_pane" "$ai"
+      else
+        send_ai_shell "$agent_pane" "$ai"
+      fi
     else
       run_pane="$(tmux split-window -h -p 50 -t "$agent_pane" -c "$project_dir" -P -F '#{pane_id}')"
       tmux select-pane -t "$agent_pane" -T "$ai"
       tmux select-pane -t "$run_pane" -T run
-      send_ai "$agent_pane" "$ai"
+      if [[ "$ai_run" -eq 1 ]]; then
+        send_ai "$agent_pane" "$ai"
+      else
+        send_ai_shell "$agent_pane" "$ai"
+      fi
       tmux send-keys -t "$run_pane" "$(runner_command)" C-m
     fi
   elif [[ "$runner" == "one" ]]; then
