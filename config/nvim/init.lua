@@ -273,11 +273,14 @@ require("lazy").setup({
           "html", "javascript", "json", "lua", "markdown",
           "templ", "tsx", "typescript", "vim",
         },
-        -- Neovim 0.12 ships its own treesitter highlighter;
-        -- nvim-treesitter master's highlight/indent modules are incompatible.
         highlight = { enable = false },
         indent = { enable = false },
       })
+      -- nvim-treesitter's queries/ conflict with Neovim 0.12's built-in highlighter.
+      -- Remove the plugin root from rtp; re-add only parser/ so .so files stay reachable.
+      local ts_root = vim.fn.stdpath("data") .. "/lazy/nvim-treesitter"
+      vim.opt.rtp:remove(ts_root)
+      vim.opt.rtp:append(ts_root .. "/parser")
     end,
   },
   {
