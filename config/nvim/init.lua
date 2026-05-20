@@ -273,14 +273,9 @@ require("lazy").setup({
           "html", "javascript", "json", "lua", "markdown",
           "templ", "tsx", "typescript", "vim",
         },
-        highlight = { enable = false },
+        highlight = { enable = true },
         indent = { enable = false },
       })
-      -- nvim-treesitter's queries/ conflict with Neovim 0.12's built-in highlighter.
-      -- Remove the plugin root from rtp; re-add only parser/ so .so files stay reachable.
-      local ts_root = vim.fn.stdpath("data") .. "/lazy/nvim-treesitter"
-      vim.opt.rtp:remove(ts_root)
-      vim.opt.rtp:append(ts_root .. "/parser")
     end,
   },
   {
@@ -376,13 +371,6 @@ require("lazy").setup({
       },
     },
   },
-})
-
--- Use Neovim 0.12's built-in treesitter highlighter
-vim.api.nvim_create_autocmd("FileType", {
-  callback = function()
-    pcall(vim.treesitter.start)
-  end,
 })
 
 apply_theme_overrides()
