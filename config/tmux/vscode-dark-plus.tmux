@@ -2,12 +2,10 @@
 
 bg="#1e1e1e"
 bg_alt="#2d2d30"
-bg_tab="#252526"
+active_tab="#000000"
 fg="#d4d4d4"
-muted="#808080"
 blue="#569cd6"
 yellow="#dcdcaa"
-green="#6a9955"
 
 get() {
   local option="$1"
@@ -46,18 +44,18 @@ setg display-panes-active-colour "$yellow"
 setg display-panes-colour "$blue"
 
 setw window-status-separator " "
-setw window-style "fg=$muted,bg=$bg"
+setw window-style "fg=$fg,bg=$bg"
 setw window-active-style "fg=$fg,bg=$bg"
-setw window-status-style "fg=$muted,bg=$bg_tab"
-setw window-status-current-style "fg=$bg,bg=$blue,bold"
+setw window-status-style "fg=$fg,bg=$bg"
+setw window-status-current-style "fg=$fg,bg=$active_tab,bold"
 setw window-status-activity-style "fg=$yellow,bg=$bg"
 
-setg status-left "#[fg=$bg,bg=$blue,bold] #S #[fg=$blue,bg=$bg,nobold] "
-setw window-status-format "#[fg=$muted,bg=$bg_tab] #I:#W "
-setw window-status-current-format "#[fg=$bg,bg=$blue,bold] #I:#W "
+setg status-left "#[fg=$fg,bg=$bg,bold] #S #[fg=$fg,bg=$bg,nobold] "
+setw window-status-format "#[fg=$fg,bg=$bg] #I:#W "
+setw window-status-current-format "#[fg=$fg,bg=$active_tab,bold] #I:#W "
 
 if [ -n "$widgets" ]; then
-  setg status-right "#[fg=$muted,bg=$bg]${widgets} ${time_format} ${date_format}"
+  setg status-right "#[fg=$fg,bg=$bg]${widgets} ${time_format} ${date_format}"
 else
-  setg status-right "#[fg=$muted,bg=$bg]${time_format} ${date_format}"
+  setg status-right "#[fg=$fg,bg=$bg]${time_format} ${date_format}"
 fi
