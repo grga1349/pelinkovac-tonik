@@ -17,6 +17,9 @@ recommended=(
   psql
   pgcli
   rainfrog
+)
+
+optional_ai=(
   codex
   claude
 )
@@ -37,6 +40,16 @@ done
 printf '\n%s\n' 'Recommended tools'
 printf '%s\n' '-----------------'
 for cmd in "${recommended[@]}"; do
+  if command -v "$cmd" >/dev/null 2>&1; then
+    printf 'ok      %s\n' "$cmd"
+  else
+    printf 'missing %s\n' "$cmd"
+  fi
+done
+
+printf '\n%s\n' 'Optional AI tools'
+printf '%s\n' '-----------------'
+for cmd in "${optional_ai[@]}"; do
   if command -v "$cmd" >/dev/null 2>&1; then
     printf 'ok      %s\n' "$cmd"
   else

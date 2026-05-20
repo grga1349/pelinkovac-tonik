@@ -11,6 +11,7 @@
 - Select windows: `Alt-1` through `Alt-6`
 - Resize panes: `Ctrl-j Ctrl-h`, `Ctrl-j Ctrl-j`, `Ctrl-j Ctrl-k`, `Ctrl-j Ctrl-l`
 - Mouse scroll: enabled
+- Shift-Enter: forwarded as an extended key sequence for terminal apps that support multiline submit
 
 ## Neovim
 
@@ -31,7 +32,7 @@
 
 ## ptx
 
-- Show help: `ptx --help`
-- Show this cheatsheet: `ptx --keys`
+- Show help: `ptx help`, `ptx --help`
+- Show this cheatsheet: `ptx keys`, `ptx --keys`
 - Recreate current repo session: `ptx --reset`
 - Kill current repo session: `ptx --kill`

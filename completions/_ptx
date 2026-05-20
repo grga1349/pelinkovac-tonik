@@ -1,0 +1,58 @@
+#compdef ptx
+
+local -a commands presets ai_modes runner_modes editors diff_modes options
+
+commands=(
+  'help:show ptx help'
+  'keys:show tmux and Neovim keybindings'
+)
+
+presets=(
+  'short:shell and editor only'
+  'full:default layout with running DB client'
+  'heavy:two AI panes, two runners, and running DB client'
+  'ai:codex and claude mode'
+  'run2:two runner mode'
+  'db:default layout with running DB client'
+  'dry:alias for short'
+  'classic:legacy default with Codex and one runner'
+  'strong:alias for full'
+  'double:alias for heavy'
+  'neat:term and edit only'
+)
+
+ai_modes=(codex claude both none)
+runner_modes=(none one two)
+editors=(nvim hx none)
+diff_modes=(lazygit delta none)
+
+options=(
+  '--ai[set AI pane mode]:mode:(${ai_modes[*]})'
+  '--runner[set runner pane mode]:mode:(${runner_modes[*]})'
+  '--db[create db window and start a db client]'
+  '--no-db[skip db window]'
+  '--editor[set editor command]:editor:(${editors[*]})'
+  '--diff[set diff window command]:diff:(${diff_modes[*]})'
+  '--reset[recreate the tmux session]'
+  '--kill[kill the tmux session and exit]'
+  '--keys[print tmux and Neovim keybindings]'
+  '(-h --help)'{-h,--help}'[show help]'
+)
+
+_arguments -C \
+  $options \
+  '1:command or preset:->command_or_preset' \
+  '*::option or project dir:->rest' && return
+
+case "$state" in
+  command_or_preset)
+    _describe -t commands 'commands' commands
+    _describe -t presets 'presets' presets
+    _files -/
+    ;;
+  rest)
+    _arguments \
+      $options \
+      '*:project dir:_files -/'
+    ;;
+esac

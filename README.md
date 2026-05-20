@@ -2,7 +2,7 @@
 
 `ptx` is a small Bash CLI facade for launching tmux dev workspaces.
 
-It detects the current git repo, names the tmux session after the repo folder, attaches to an existing session when one exists, and otherwise creates a ready-to-work layout with terminal, AI, runner, diff, editor, and optional DB windows.
+It detects the current git repo, names the tmux session after the repo folder, attaches to an existing session when one exists, and otherwise creates a ready-to-work layout with terminal, diff, editor, and optional DB windows. AI and runner panes are opt-in.
 
 ## Install
 
@@ -10,9 +10,9 @@ It detects the current git repo, names the tmux session after the repo folder, a
 ./install.sh
 ```
 
-The main installer only installs the `ptx` alias and bundled dotfiles. It does not install system packages.
+The main installer installs the `ptx` alias, zsh completions, and bundled dotfiles. It does not install system packages.
 
-To only install the command alias:
+To only install the command alias and completions:
 
 ```sh
 ./install.sh --no-dotfiles
@@ -51,13 +51,20 @@ ptx ~/Projects/my-app
 Command shape:
 
 ```sh
-ptx [preset] [options]
+ptx [command|preset] [options]
+```
+
+Commands:
+
+```sh
+ptx help      # show help
+ptx keys      # show keybindings
 ```
 
 ## Presets
 
 ```sh
-ptx           # default workspace with db shell
+ptx           # default workspace with term, diff, edit, db shell
 ptx short     # shell + editor only
 ptx full      # default + running db client
 ptx heavy     # two AI panes + two runners + running db client
@@ -70,7 +77,7 @@ Fun aliases:
 
 ```sh
 ptx dry       # short
-ptx classic   # default
+ptx classic   # legacy default with Codex and one runner
 ptx strong    # full
 ptx double    # heavy
 ptx neat      # term + edit, no AI, no runner
@@ -95,7 +102,14 @@ ptx neat      # term + edit, no AI, no runner
 Default:
 
 1. `term`: home shell + repo shell
-2. `agent`: AI + runner
+2. `diff`: live diff / lazygit
+3. `edit`: editor
+4. `db`: shell only
+
+Classic:
+
+1. `term`: home shell + repo shell
+2. `agent`: Codex + runner
 3. `diff`: live diff / lazygit
 4. `edit`: editor
 5. `db`: shell only
@@ -112,8 +126,8 @@ Heavy:
 ## Defaults
 
 - Editor: `nvim`
-- AI: `codex`
-- Runner: one auto-detected runner
+- AI: off
+- Runner: off
 - Diff: `lazygit`, with a git-status fallback
 - DB window: on by default as a plain shell
 - DB client: off unless using `full`, `heavy`, `db`, or `--db`
@@ -138,6 +152,7 @@ DB client preference:
 
 ```sh
 ptx --keys
+ptx keys
 ```
 
 See [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).

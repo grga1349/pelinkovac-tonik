@@ -3,12 +3,13 @@ set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 install_dotfiles=1
+completion_dir="${ZDOTDIR:-$HOME}/.zsh/completions"
 
 usage() {
   cat <<'EOF'
 Usage: ./install.sh [--no-dotfiles]
 
-Installs the ptx command and optionally copies the bundled editor/terminal config.
+Installs the ptx command, zsh completions, and optionally copies the bundled editor/terminal config.
 This script does not install system packages.
 
 Options:
@@ -68,7 +69,22 @@ install_alias() {
     printf '\n%s\n' "alias ptx=\"$repo_dir/bin/ptx\"" >> "$zshrc"
   fi
 
+  if ! grep -Fq "$completion_dir" "$zshrc"; then
+    {
+      printf '\n%s\n' "# ptx completions"
+      printf '%s\n' "fpath=(\"$completion_dir\" \$fpath)"
+      printf '%s\n' 'autoload -Uz compinit'
+      printf '%s\n' 'compinit'
+    } >> "$zshrc"
+  fi
+
   printf '%s\n' "Installed ptx alias in $zshrc"
+}
+
+install_completion() {
+  mkdir -p "$completion_dir"
+  cp "$repo_dir/completions/_ptx" "$completion_dir/_ptx"
+  printf '%s\n' "Installed ptx zsh completion in $completion_dir/_ptx"
 }
 
 install_configs() {
@@ -88,6 +104,7 @@ install_configs() {
 
 chmod +x "$repo_dir"/bin/* "$repo_dir"/scripts/*.sh
 install_alias
+install_completion
 
 if [[ "$install_dotfiles" -eq 1 ]]; then
   install_configs

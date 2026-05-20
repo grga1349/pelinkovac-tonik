@@ -9,10 +9,14 @@ print_help() {
 ptx / pelinkovac-tonik
 
 Usage:
-  ptx [preset] [options] [project-dir]
+  ptx [command|preset] [options] [project-dir]
+
+Commands:
+  ptx help       show this help
+  ptx keys       print tmux and Neovim keybindings
 
 Presets:
-  ptx            default workspace: term, agent, diff, edit, db shell
+  ptx            default workspace: term, diff, edit, db shell
   ptx short      shell + editor only
   ptx full       default + running db client
   ptx heavy      two AI panes + two runners + running db client
@@ -22,7 +26,7 @@ Presets:
 
 Fun aliases:
   ptx dry        short
-  ptx classic    default
+  ptx classic    legacy default with Codex and one runner
   ptx strong     full
   ptx double     heavy
   ptx neat       term + edit, no AI, no runner
@@ -179,8 +183,8 @@ preset="default"
 project_arg=""
 reset=0
 kill_only=0
-ai="codex"
-runner="one"
+ai="none"
+runner="none"
 db_window=1
 db_run=0
 editor="nvim"
@@ -188,6 +192,14 @@ diff="lazygit"
 
 if [[ $# -gt 0 ]]; then
   case "$1" in
+    help)
+      print_help
+      exit 0
+      ;;
+    keys)
+      print_keys
+      exit 0
+      ;;
     short|full|heavy|ai|run2|db|dry|classic|strong|double|neat)
       preset="$1"
       shift
@@ -214,7 +226,10 @@ case "$preset" in
   neat)
     ai="none"; runner="none"; db_window=0; db_run=0; diff="none"
     ;;
-  classic|default)
+  classic)
+    ai="codex"; runner="one"
+    ;;
+  default)
     ;;
 esac
 
