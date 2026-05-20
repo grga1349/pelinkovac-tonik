@@ -32,15 +32,12 @@
 
 ## rainfrog
 
-- Focus menu: `Ctrl-1`
-- Focus editor: `Ctrl-2`
-- Focus results: `Ctrl-3`
-- Focus history: `Ctrl-4`
-- Focus favorites: `Ctrl-5`
-- Cycle focus forward/back: `Tab`, `Shift-Tab`
+- Cycle panes forward: `Alt-]`, `Tab`
+- Cycle panes backward: `Alt-[`, `Shift-Tab`
+- Jump to editor: `Alt-\`
 - Execute query: `Ctrl-Enter`
 - Execute query (bypass parser): `Alt-Enter`
-- Abort query: `Alt-q` (editor), `q` (other panes)
+- Abort query: `q` (menu/results/history/favorites)
 - Quit: `Ctrl-c`
 
 ## ptx
