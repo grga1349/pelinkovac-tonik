@@ -2,10 +2,10 @@
 
 bg="#1e1e1e"
 bg_alt="#2d2d30"
-active_tab="#000000"
 fg="#d4d4d4"
 blue="#569cd6"
 yellow="#dcdcaa"
+status_fg="$blue"
 
 get() {
   local option="$1"
@@ -35,7 +35,7 @@ setg status on
 setg status-justify left
 setg status-left-length 80
 setg status-right-length 80
-setg status-style "fg=$fg,bg=$bg"
+setg status-style "fg=$bg,bg=$status_fg"
 setg message-style "fg=$fg,bg=$bg_alt"
 setg message-command-style "fg=$fg,bg=$bg_alt"
 setg pane-border-style "fg=$bg_alt,bg=$bg"
@@ -43,19 +43,19 @@ setg pane-active-border-style "fg=$blue,bg=$bg"
 setg display-panes-active-colour "$yellow"
 setg display-panes-colour "$blue"
 
-setw window-status-separator " "
+setw window-status-separator "#[fg=$bg,bg=$status_fg] "
 setw window-style "fg=$fg,bg=$bg"
 setw window-active-style "fg=$fg,bg=$bg"
-setw window-status-style "fg=$fg,bg=$bg"
-setw window-status-current-style "fg=$fg,bg=$active_tab,bold"
-setw window-status-activity-style "fg=$yellow,bg=$bg"
+setw window-status-style "fg=$bg,bg=$status_fg"
+setw window-status-current-style "fg=$status_fg,bg=$bg,bold"
+setw window-status-activity-style "fg=$yellow,bg=$status_fg"
 
-setg status-left "#[fg=$fg,bg=$bg,bold] #S #[fg=$fg,bg=$bg,nobold] "
-setw window-status-format "#[fg=$fg,bg=$bg] #I:#W "
-setw window-status-current-format "#[fg=$fg,bg=$active_tab,bold] #I:#W "
+setg status-left "#[fg=$bg,bg=$status_fg,bold] #S #[fg=$bg,bg=$status_fg,nobold] "
+setw window-status-format "#[fg=$bg,bg=$status_fg] #I:#W #[fg=$bg,bg=$status_fg]"
+setw window-status-current-format "#[fg=$status_fg,bg=$bg,bold] #I:#W #[fg=$bg,bg=$status_fg,nobold]"
 
 if [ -n "$widgets" ]; then
-  setg status-right "#[fg=$fg,bg=$bg]${widgets} ${time_format} ${date_format}"
+  setg status-right "#[fg=$bg,bg=$status_fg]${widgets} ${time_format} ${date_format}"
 else
-  setg status-right "#[fg=$fg,bg=$bg]${time_format} ${date_format}"
+  setg status-right "#[fg=$bg,bg=$status_fg]${time_format} ${date_format}"
 fi
