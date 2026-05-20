@@ -264,17 +264,15 @@ require("lazy").setup({
   },
   {
     "nvim-treesitter/nvim-treesitter",
-    branch = "master",
+    branch = "main",
+    lazy = false,
     build = ":TSUpdate",
     config = function()
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = {
-          "bash", "css", "go", "gomod", "gowork", "gosum",
-          "html", "javascript", "json", "lua", "markdown",
-          "templ", "tsx", "typescript", "vim",
-        },
-        highlight = { enable = true },
-        indent = { enable = false },
+      require("nvim-treesitter").setup()
+      require("nvim-treesitter").install({
+        "bash", "css", "go", "gomod", "gowork", "gosum",
+        "html", "javascript", "json", "lua", "markdown",
+        "templ", "tsx", "typescript", "vim",
       })
     end,
   },
@@ -371,6 +369,12 @@ require("lazy").setup({
       },
     },
   },
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+  callback = function()
+    pcall(vim.treesitter.start)
+  end,
 })
 
 apply_theme_overrides()
