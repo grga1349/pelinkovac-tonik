@@ -57,13 +57,13 @@ ptx [preset] [options]
 ## Presets
 
 ```sh
-ptx           # default workspace
+ptx           # default workspace with db shell
 ptx short     # shell + editor only
-ptx full      # default + db
-ptx heavy     # two AI panes + two runners + db
+ptx full      # default + running db client
+ptx heavy     # two AI panes + two runners + running db client
 ptx ai        # codex + claude mode
 ptx run2      # two runner mode
-ptx db        # default + db
+ptx db        # default + running db client
 ```
 
 Fun aliases:
@@ -81,8 +81,8 @@ ptx neat      # term + edit, no AI, no runner
 ```sh
 --ai codex|claude|both|none
 --runner none|one|two
---db
---no-db
+--db           # create db window and start a db client
+--no-db        # skip db window
 --editor nvim|hx|none
 --diff lazygit|delta|none
 --reset
@@ -98,6 +98,7 @@ Default:
 2. `agent`: AI + runner
 3. `diff`: live diff / lazygit
 4. `edit`: editor
+5. `db`: shell only
 
 Heavy:
 
@@ -114,7 +115,8 @@ Heavy:
 - AI: `codex`
 - Runner: one auto-detected runner
 - Diff: `lazygit`, with a git-status fallback
-- DB: off unless using `full`, `heavy`, `db`, or `--db`
+- DB window: on by default as a plain shell
+- DB client: off unless using `full`, `heavy`, `db`, or `--db`
 
 Runner detection:
 

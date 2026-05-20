@@ -12,13 +12,13 @@ Usage:
   ptx [preset] [options] [project-dir]
 
 Presets:
-  ptx            default workspace: term, agent, diff, edit
+  ptx            default workspace: term, agent, diff, edit, db shell
   ptx short      shell + editor only
-  ptx full       default + db
-  ptx heavy      two AI panes + two runners + db
+  ptx full       default + running db client
+  ptx heavy      two AI panes + two runners + running db client
   ptx ai         codex + claude mode
   ptx run2       two runner mode
-  ptx db         default + db
+  ptx db         default + running db client
 
 Fun aliases:
   ptx dry        short
@@ -30,8 +30,8 @@ Fun aliases:
 Options:
   --ai codex|claude|both|none
   --runner none|one|two
-  --db
-  --no-db
+  --db           create db window and start a db client
+  --no-db        skip db window
   --editor nvim|hx|none
   --diff lazygit|delta|none
   --reset        recreate the tmux session
@@ -181,7 +181,8 @@ reset=0
 kill_only=0
 ai="codex"
 runner="one"
-db=0
+db_window=1
+db_run=0
 editor="nvim"
 diff="lazygit"
 
@@ -196,13 +197,13 @@ fi
 
 case "$preset" in
   short|dry)
-    ai="none"; runner="none"; db=0; diff="none"
+    ai="none"; runner="none"; db_window=0; db_run=0; diff="none"
     ;;
   full|strong|db)
-    db=1
+    db_window=1; db_run=1
     ;;
   heavy|double)
-    ai="both"; runner="two"; db=1
+    ai="both"; runner="two"; db_window=1; db_run=1
     ;;
   ai)
     ai="both"
@@ -211,7 +212,7 @@ case "$preset" in
     runner="two"
     ;;
   neat)
-    ai="none"; runner="none"; db=0; diff="none"
+    ai="none"; runner="none"; db_window=0; db_run=0; diff="none"
     ;;
   classic|default)
     ;;
@@ -230,11 +231,13 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --db)
-      db=1
+      db_window=1
+      db_run=1
       shift
       ;;
     --no-db)
-      db=0
+      db_window=0
+      db_run=0
       shift
       ;;
     --editor)
@@ -345,10 +348,14 @@ edit_pane="$(tmux new-window -t "$session_name:" -n edit -c "$project_dir" -P -F
 tmux select-pane -t "$edit_pane" -T edit
 send_editor "$edit_pane" "$editor"
 
-if [[ "$db" -eq 1 ]]; then
+if [[ "$db_window" -eq 1 ]]; then
   db_pane="$(tmux new-window -t "$session_name:" -n db -c "$project_dir" -P -F '#{pane_id}')"
   tmux select-pane -t "$db_pane" -T db
-  tmux send-keys -t "$db_pane" "$(db_command)" C-m
+  if [[ "$db_run" -eq 1 ]]; then
+    tmux send-keys -t "$db_pane" "$(db_command)" C-m
+  else
+    send_shell "$db_pane"
+  fi
 fi
 
 tmux select-window -t "$session_name:term"
