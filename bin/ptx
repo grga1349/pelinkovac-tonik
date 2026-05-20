@@ -122,12 +122,10 @@ send_shell() {
 hint_shell_command() {
   local label="$1"
   local command="$2"
-  printf 'printf '\''%%s\\n'\'' %s %s %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
+  printf 'printf '\''\033[38;5;39m%%s\033[0m\n\n\033[38;5;245m%%s\033[0m\n  \033[38;5;76m%%s\033[0m\n\n'\'' %s %s %s; exec "${SHELL:-/bin/sh}" -l' \
     "$(shell_quote "[$label]")" \
-    "$(shell_quote "")" \
     "$(shell_quote "Start with:")" \
-    "$(shell_quote "  $command")" \
-    "$(shell_quote "")"
+    "$(shell_quote "$command")"
 }
 
 ai_hint_command() {

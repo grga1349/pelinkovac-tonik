@@ -11,7 +11,7 @@
 - Select windows: `Alt-1` through `Alt-6`
 - Resize panes: `Ctrl-j Ctrl-h`, `Ctrl-j Ctrl-j`, `Ctrl-j Ctrl-k`, `Ctrl-j Ctrl-l`
 - Mouse scroll: enabled
-- Shift-Enter: sends the extended Enter sequence used by Codex for multiline input
+- Shift-Enter: sends a literal line feed for multiline input in Codex and Claude
 
 ## Neovim
 

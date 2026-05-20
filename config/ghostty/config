@@ -65,4 +65,4 @@ palette=13=#c586c0
 palette=14=#9cdcfe
 palette=15=#ffffff
 
-keybind=shift+enter=text:\x1b[13;2u
+keybind=shift+enter=text:\x0a
