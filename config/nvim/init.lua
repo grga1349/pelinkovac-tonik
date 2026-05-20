@@ -269,6 +269,13 @@ require("lazy").setup({
     build = ":TSUpdate",
     config = function()
       require("nvim-treesitter").setup()
+      vim.schedule(function()
+        require("nvim-treesitter").install({
+          "bash", "css", "go", "gomod", "gosum",
+          "html", "javascript", "json", "lua", "markdown",
+          "templ", "tsx", "typescript", "vim",
+        })
+      end)
     end,
   },
   {
