@@ -266,29 +266,18 @@ require("lazy").setup({
     "nvim-treesitter/nvim-treesitter",
     branch = "master",
     build = ":TSUpdate",
-    opts = {
-      ensure_installed = {
-        "bash",
-        "css",
-        "go",
-        "gomod",
-        "gowork",
-        "gosum",
-        "html",
-        "javascript",
-        "json",
-        "lua",
-        "markdown",
-        "templ",
-        "tsx",
-        "typescript",
-        "vim",
-      },
-      highlight = { enable = true },
-      indent = { enable = true },
-    },
-    config = function(_, opts)
-      require("nvim-treesitter.configs").setup(opts)
+    config = function()
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = {
+          "bash", "css", "go", "gomod", "gowork", "gosum",
+          "html", "javascript", "json", "lua", "markdown",
+          "templ", "tsx", "typescript", "vim",
+        },
+        -- Neovim 0.12 ships its own treesitter highlighter;
+        -- nvim-treesitter master's highlight/indent modules are incompatible.
+        highlight = { enable = false },
+        indent = { enable = false },
+      })
     end,
   },
   {
@@ -384,6 +373,13 @@ require("lazy").setup({
       },
     },
   },
+})
+
+-- Use Neovim 0.12's built-in treesitter highlighter
+vim.api.nvim_create_autocmd("FileType", {
+  callback = function()
+    pcall(vim.treesitter.start)
+  end,
 })
 
 apply_theme_overrides()
