@@ -32,11 +32,11 @@
 
 ## rainfrog
 
-- Focus menu: `Ctrl-k`
-- Focus editor: `Ctrl-j`
-- Focus results: `Ctrl-h`
-- Focus history: `Ctrl-g`
-- Focus favorites: `Ctrl-m`
+- Focus menu: `Ctrl-1`
+- Focus editor: `Ctrl-2`
+- Focus results: `Ctrl-3`
+- Focus history: `Ctrl-4`
+- Focus favorites: `Ctrl-5`
 - Cycle focus forward/back: `Tab`, `Shift-Tab`
 - Execute query: `Ctrl-Enter`
 - Execute query (bypass parser): `Alt-Enter`
