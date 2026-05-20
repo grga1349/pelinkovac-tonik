@@ -2,7 +2,7 @@
 
 `ptx` is a small Bash CLI facade for launching tmux dev workspaces.
 
-It detects the current git repo, names the tmux session after the repo folder, attaches to an existing session when one exists, and otherwise creates a ready-to-work layout with work, AI, diff, editor, and DB windows. By default AI, runner, and DB panes are present as shells and do not start commands.
+It detects the current git repo, names the tmux session after the repo folder, attaches to an existing session when one exists, and otherwise creates a ready-to-work layout with shell, work, diff, editor, and DB windows. By default AI, runner, and DB panes are present as shells and do not start commands.
 
 ## Install
 
@@ -64,14 +64,14 @@ ptx keys      # show keybindings
 ## Presets
 
 ```sh
-ptx           # default workspace with work, ai, diff, edit, db shell
+ptx           # default workspace with shell, work, diff, edit, db shell
 ptx short     # shell + editor only
 ptx full      # default + running db client
-ptx heavy     # two AI panes + two runners + running db client
+ptx heavy     # default + two runner panes + running db client
 ptx ai        # codex + claude mode
 ptx run2      # two runner mode
 ptx db        # default + running db client
-ptx light     # compact work tab with AI + runner shells
+ptx light     # default layout without DB tab
 ```
 
 Fun aliases:
@@ -103,24 +103,24 @@ ptx neat      # term + edit, no AI, no runner
 
 Default:
 
-1. `work`: git shell + runner shell
-2. `ai`: Claude-ready shell + Codex-ready shell
+1. `shell`: home shell + repo shell
+2. `work`: AI shell + runner shell
 3. `diff`: diffnav
 4. `edit`: editor
 5. `db`: shell only
 
 Classic:
 
-1. `work`: git shell + runner shell
-2. `ai`: Codex-ready shell
+1. `shell`: home shell + repo shell
+2. `work`: AI shell + runner shell
 3. `diff`: diffnav
 4. `edit`: editor
 5. `db`: shell only
 
 Heavy:
 
-1. `work`
-2. `ai`: codex + claude
+1. `shell`
+2. `work`: AI shell + runner shell
 3. `run`: runner + runner2
 4. `diff`
 5. `edit`
@@ -128,14 +128,15 @@ Heavy:
 
 Light:
 
-1. `work`: git shell + runner shell + AI shell
-2. `diff`: diffnav
-3. `edit`: editor
+1. `shell`: home shell + repo shell
+2. `work`: AI shell + runner shell
+3. `diff`: diffnav
+4. `edit`: editor
 
 ## Defaults
 
 - Editor: `nvim`
-- AI: Claude and Codex panes are created but not launched
+- AI: one AI pane is created but not launched
 - Runner: one runner shell is created but the runner command is not launched
 - Diff: `diffnav`
 - DB window: on by default as a plain shell

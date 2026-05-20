@@ -10,11 +10,11 @@ commands=(
 presets=(
   'short:shell and editor only'
   'full:default layout with running DB client'
-  'heavy:two AI panes, two runners, and running DB client'
+  'heavy:default plus two runner panes and running DB client'
   'ai:codex and claude mode'
   'run2:two runner mode'
   'db:default layout with running DB client'
-  'light:compact work tab with AI and runner shells'
+  'light:shell, work, diff, and edit without DB'
   'dry:alias for short'
   'classic:legacy default with Codex pane and one runner'
   'strong:alias for full'

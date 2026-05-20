@@ -16,14 +16,14 @@ Commands:
   ptx keys       print tmux and Neovim keybindings
 
 Presets:
-  ptx            default workspace: work, ai, diff, edit, db shell
+  ptx            default workspace: shell, work, diff, edit, db shell
   ptx short      shell + editor only
   ptx full       default + running db client
-  ptx heavy      two AI panes + two runners + running db client
+  ptx heavy      default + two runner panes + running db client
   ptx ai         codex + claude mode
   ptx run2       two runner mode
   ptx db         default + running db client
-  ptx light      compact work tab with AI + runner shells
+  ptx light      default layout without DB tab
 
 Fun aliases:
   ptx dry        short
@@ -46,7 +46,7 @@ Options:
   -h, --help     show this help
 
 Window names:
-  work, ai, run, diff, edit, db
+  shell, work, run, diff, edit, db
 EOF
 }
 
@@ -170,7 +170,7 @@ preset="default"
 project_arg=""
 reset=0
 kill_only=0
-ai="both"
+ai="codex"
 runner="one"
 layout="default"
 db_window=1
@@ -304,28 +304,25 @@ if tmux has-session -t "$session_name" 2>/dev/null; then
   exit 0
 fi
 
-home_pane="$(tmux new-session -d -s "$session_name" -n work -c "$project_dir" -P -F '#{pane_id}')"
+home_pane="$(tmux new-session -d -s "$session_name" -n shell -c "$HOME" -P -F '#{pane_id}')"
 repo_pane="$(tmux split-window -h -p 50 -t "$home_pane" -c "$project_dir" -P -F '#{pane_id}')"
-tmux select-pane -t "$home_pane" -T git
-tmux select-pane -t "$repo_pane" -T run
+tmux select-pane -t "$home_pane" -T home
+tmux select-pane -t "$repo_pane" -T repo
 
 if [[ "$layout" == "compact" && "$ai" != "none" && "$runner" == "one" ]]; then
-  ai_pane="$(tmux split-window -v -p 50 -t "$home_pane" -c "$project_dir" -P -F '#{pane_id}')"
-  tmux select-pane -t "$ai_pane" -T "$ai"
+  ai_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
+  runner_pane="$(tmux split-window -h -p 50 -t "$ai_pane" -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$ai_pane" -T ai
+  tmux select-pane -t "$runner_pane" -T runner
   send_ai_shell "$ai_pane" "$ai"
-elif [[ "$ai" != "none" ]]; then
-  agent_pane="$(tmux new-window -t "$session_name:" -n ai -c "$project_dir" -P -F '#{pane_id}')"
-  tmux select-pane -t "$agent_pane" -T ai
-  if [[ "$ai" == "both" ]]; then
-    claude_pane="$agent_pane"
-    codex_pane="$(tmux split-window -h -p 50 -t "$claude_pane" -c "$project_dir" -P -F '#{pane_id}')"
-    tmux select-pane -t "$claude_pane" -T claude
-    tmux select-pane -t "$codex_pane" -T codex
-    send_ai_shell "$claude_pane" claude
-    send_ai_shell "$codex_pane" codex
-  elif [[ "$ai" == "codex" || "$ai" == "claude" ]]; then
-    send_ai_shell "$agent_pane" "$ai"
+elif [[ "$ai" != "none" || "$runner" == "one" ]]; then
+  work_pane="$(tmux new-window -t "$session_name:" -n work -c "$project_dir" -P -F '#{pane_id}')"
+  tmux select-pane -t "$work_pane" -T ai
+  if [[ "$runner" == "one" ]]; then
+    runner_pane="$(tmux split-window -h -p 50 -t "$work_pane" -c "$project_dir" -P -F '#{pane_id}')"
+    tmux select-pane -t "$runner_pane" -T runner
   fi
+  send_ai_shell "$work_pane" "$ai"
 fi
 
 if [[ "$runner" == "two" ]]; then
@@ -353,7 +350,7 @@ if [[ "$db_window" -eq 1 ]]; then
   fi
 fi
 
-tmux select-window -t "$session_name:work"
+tmux select-window -t "$session_name:shell"
 tmux select-pane -t "$repo_pane"
 
 if [[ -n "${TMUX:-}" ]]; then
