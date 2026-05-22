@@ -111,6 +111,10 @@ install_completion
 if [[ "$install_dotfiles" -eq 1 ]]; then
   install_configs
   printf '%s\n' 'Installed Neovim, tmux, and Ghostty config.'
+  if command -v tmux &>/dev/null && tmux info &>/dev/null 2>&1; then
+    tmux source-file ~/.tmux.conf
+    printf '%s\n' 'Reloaded active tmux sessions.'
+  fi
 fi
 
 printf '\n%s\n' 'Tool check:'

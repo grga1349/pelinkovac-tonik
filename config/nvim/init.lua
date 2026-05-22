@@ -19,6 +19,8 @@ vim.opt.splitbelow = true
 vim.opt.updatetime = 250
 vim.opt.timeoutlen = 400
 vim.opt.colorcolumn = "120"
+vim.opt.clipboard = "unnamedplus"
+vim.opt.autoread = true
 
 vim.filetype.add({
   extension = {
@@ -377,6 +379,11 @@ vim.api.nvim_create_autocmd("FileType", {
   callback = function()
     pcall(vim.treesitter.start)
   end,
+})
+
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+  pattern = "*",
+  command = "checktime",
 })
 
 apply_theme_overrides()
