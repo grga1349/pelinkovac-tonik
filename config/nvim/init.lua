@@ -297,7 +297,7 @@ require("lazy").setup({
         table.insert(ensure, "jdtls")
       end
       if vim.fn.executable("dotnet") == 1 then
-        table.insert(ensure, "omnisharp")
+        table.insert(ensure, "csharp_ls")
       end
       return { ensure_installed = ensure }
     end,
@@ -346,7 +346,7 @@ require("lazy").setup({
         servers.jdtls = {}
       end
       if vim.fn.executable("dotnet") == 1 then
-        servers.omnisharp = {}
+        servers.csharp_ls = {}
       end
 
       for server_name, config in pairs(servers) do
