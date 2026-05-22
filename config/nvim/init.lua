@@ -273,8 +273,8 @@ require("lazy").setup({
       require("nvim-treesitter").setup()
       vim.schedule(function()
         require("nvim-treesitter").install({
-          "bash", "css", "go", "gomod", "gosum",
-          "html", "javascript", "json", "lua", "markdown",
+          "bash", "c_sharp", "css", "go", "gomod", "gosum",
+          "html", "java", "javascript", "json", "lua", "markdown",
           "templ", "tsx", "typescript", "vim",
         })
       end)
@@ -291,14 +291,16 @@ require("lazy").setup({
       "williamboman/mason.nvim",
       "neovim/nvim-lspconfig",
     },
-    opts = {
-      ensure_installed = {
-        "gopls",
-        "lua_ls",
-        "templ",
-        "ts_ls",
-      },
-    },
+    opts = function()
+      local ensure = { "gopls", "lua_ls", "templ", "ts_ls" }
+      if vim.fn.executable("javac") == 1 then
+        table.insert(ensure, "jdtls")
+      end
+      if vim.fn.executable("dotnet") == 1 then
+        table.insert(ensure, "omnisharp")
+      end
+      return { ensure_installed = ensure }
+    end,
   },
   {
     "neovim/nvim-lspconfig",
@@ -339,6 +341,13 @@ require("lazy").setup({
         templ = {},
         ts_ls = {},
       }
+
+      if vim.fn.executable("javac") == 1 then
+        servers.jdtls = {}
+      end
+      if vim.fn.executable("dotnet") == 1 then
+        servers.omnisharp = {}
+      end
 
       for server_name, config in pairs(servers) do
         config.capabilities = capabilities
