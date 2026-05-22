@@ -399,3 +399,5 @@ apply_theme_overrides()
 vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter", "WinEnter", "BufEnter" }, {
   callback = apply_theme_overrides,
 })
+
+require("ai_notes").setup()

@@ -89,6 +89,7 @@ install_completion() {
 
 install_configs() {
   install_file "$repo_dir/config/nvim/init.lua" "$HOME/.config/nvim/init.lua"
+  install_file "$repo_dir/config/nvim/lua/ai_notes.lua" "$HOME/.config/nvim/lua/ai_notes.lua"
   install_file "$repo_dir/config/tmux/tmux.conf" "$HOME/.tmux.conf"
   install_file "$repo_dir/config/tmux/vscode-dark-plus.tmux" "$HOME/.config/tmux/vscode-dark-plus.tmux"
 
