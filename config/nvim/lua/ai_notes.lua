@@ -408,7 +408,9 @@ local function setup_list_keymaps()
       vim.api.nvim_set_current_win(target)
     end
     vim.cmd("edit " .. vim.fn.fnameescape(note.file))
-    vim.api.nvim_win_set_cursor(0, { note.line_start, 0 })
+    local max_line = vim.api.nvim_buf_line_count(0)
+    local line = math.max(1, math.min(note.line_start, max_line))
+    vim.api.nvim_win_set_cursor(0, { line, 0 })
   end, opts)
 
   vim.keymap.set("n", "p", function()
@@ -503,15 +505,11 @@ function M.open_modal()
   open_modal_windows()
 end
 
-function M.open_modal_visual()
+-- Called from the x-mode keymap in setup() with positions captured before vim.schedule.
+function M.open_modal_visual(source_win, buf, name, ls, le)
   if is_modal_open() then close_modal(); return end
-  modal.source_win = vim.api.nvim_get_current_win()
-  local s    = vim.fn.getpos("'<")
-  local e    = vim.fn.getpos("'>")
-  local buf  = vim.api.nvim_get_current_buf()
-  local name = vim.api.nvim_buf_get_name(buf)
+  modal.source_win = source_win
   if name ~= "" then
-    local ls, le    = s[2], e[2]
     local code_lines = vim.api.nvim_buf_get_lines(buf, ls - 1, le, false)
     modal.pending = {
       file       = rel_path(name),
@@ -582,8 +580,22 @@ end
 -- ── Setup ─────────────────────────────────────────────────────────────────────
 
 function M.setup()
-  vim.keymap.set("n", "<leader>a", M.open_modal,        { desc = "AI Notes" })
-  vim.keymap.set("x", "<leader>a", M.open_modal_visual, { desc = "AI Notes: add note for selection" })
+  vim.keymap.set("n", "<leader>a", M.open_modal, { desc = "AI Notes" })
+  vim.keymap.set("n", "<leader>A", M.bake_prompt, { desc = "AI Notes: prompt review" })
+
+  -- Capture visual positions NOW (line("v") / line(".") are valid while still in x mode),
+  -- then defer opening until after visual mode exits so the buffer state is settled.
+  vim.keymap.set("x", "<leader>a", function()
+    local source_win = vim.api.nvim_get_current_win()
+    local buf  = vim.api.nvim_get_current_buf()
+    local name = vim.api.nvim_buf_get_name(buf)
+    local ls   = vim.fn.line("v")
+    local le   = vim.fn.line(".")
+    if ls > le then ls, le = le, ls end
+    vim.schedule(function()
+      M.open_modal_visual(source_win, buf, name, ls, le)
+    end)
+  end, { desc = "AI Notes: add note for selection" })
 
   vim.api.nvim_create_user_command("AiNotes",      M.open_modal,                    {})
   vim.api.nvim_create_user_command("AiAddNote",    M.add_note_normal,               {})

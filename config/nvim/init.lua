@@ -209,6 +209,7 @@ require("lazy").setup({
         },
         filters = {
           dotfiles = false,
+          gitignore = false,
         },
         git = {
           enable = true,
