@@ -413,11 +413,11 @@ local function setup_list_keymaps()
     vim.api.nvim_win_set_cursor(0, { line, 0 })
   end, opts)
 
-  vim.keymap.set("n", "gp", function()
+  vim.keymap.set("n", "o", function()
     open_prompt_review(load_notes())
   end, opts)
 
-  vim.keymap.set("n", "gy", function()
+  vim.keymap.set("n", "c", function()
     local notes = load_notes()
     if #notes == 0 then
       vim.notify("[ai_notes] no notes", vim.log.levels.WARN)
