@@ -49,6 +49,12 @@ vim.keymap.set("n", "<leader>?", function()
     "Rename: Space r n",
     "Code action: Space c a",
     "Format: Space f",
+    "",
+    "AI Notes: Space a",
+    "AI Notes visual: Space a (visual mode, attaches selected code)",
+    "AI Notes prompt: Space A",
+    "  modal: Tab switch panes  CR save/jump  e edit  d del  D clear",
+    "  modal: a add  gp prompt review  gy copy prompt  r refresh  q close",
   }
   vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
   vim.bo.buftype = "nofile"

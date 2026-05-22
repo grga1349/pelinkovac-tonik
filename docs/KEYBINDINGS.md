@@ -29,6 +29,16 @@
 - Rename: `Space r n`
 - Code action: `Space c a`
 - Format: `Space f`
+- AI Notes panel: `Space a`
+- AI Notes visual note: `Space a` in visual mode (attaches selected code)
+- AI Notes prompt review: `Space A`
+  - `Tab` switch between write and list panes
+  - `CR` write pane: save note / list pane: jump to file
+  - `e` edit note, `d` delete note, `D` clear all
+  - `a` add note from source window cursor
+  - `gp` open prompt review float (edit then `CR` to copy)
+  - `gy` copy prompt to clipboard directly
+  - `r` refresh list, `q` close modal
 
 ## rainfrog
 
