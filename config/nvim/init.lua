@@ -54,7 +54,7 @@ vim.keymap.set("n", "<leader>?", function()
     "AI Notes visual: Space a (visual mode, attaches selected code)",
     "AI Notes prompt: Space A",
     "  modal: Tab switch panes  CR save/jump  e edit  d del  D clear",
-    "  modal: a add  o prompt review  c copy prompt  r refresh  q close",
+    "  modal: a add  Ctrl-b prompt review  c copy prompt  r refresh  q close",
   }
   vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
   vim.bo.buftype = "nofile"

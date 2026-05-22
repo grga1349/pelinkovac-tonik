@@ -36,8 +36,8 @@
   - `CR` write pane: save note / list pane: jump to file
   - `e` edit note, `d` delete note, `D` clear all
   - `a` add note from source window cursor
-  - `o` open prompt review float (edit then `CR` to copy)
-  - `c` copy prompt to clipboard directly
+  - `Ctrl-b` open prompt review float (edit then `CR` to copy), works in both panes
+  - `c` copy prompt to clipboard directly (list pane)
   - `r` refresh list, `q` close modal
 
 ## rainfrog
