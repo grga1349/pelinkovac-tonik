@@ -2,7 +2,7 @@ local M = {}
 
 local hl_ns = vim.api.nvim_create_namespace("ai_notes_hl")
 
--- ── Storage ──────────────────────────────────────────────────────────────────
+-- ── Storage ───────────────────────────────────────────────────────────────────
 
 local function notes_path()
   return vim.fn.getcwd() .. "/.ai/notes.json"
@@ -110,9 +110,8 @@ local modal = {
   list_buf     = nil, list_win  = nil,
   note_map     = {},   -- list buf line (1-idx) → note index
   header_lines = {},   -- note index → list buf line of its header
-  editing_idx  = nil,  -- note being edited (nil = new)
-  preview_idx  = nil,  -- note currently previewed on the left
-  write_mode   = "edit", -- "edit" | "preview"
+  editing_idx  = nil,  -- nil = new note, N = editing existing note N
+  preview_idx  = nil,  -- note currently shown in write pane (nil when editing)
   source_win   = nil,
   pending      = {},
 }
@@ -135,7 +134,6 @@ local function close_modal()
   modal.header_lines = {}
   modal.editing_idx  = nil
   modal.preview_idx  = nil
-  modal.write_mode   = "edit"
   modal.source_win   = nil
   modal.pending      = {}
 end
@@ -154,10 +152,10 @@ local function compute_layout()
   return { row = row, col = col, write_w = write_w, list_w = list_w, h = inner_h }
 end
 
--- ── Write-win helpers ─────────────────────────────────────────────────────────
+-- ── Write-win title ───────────────────────────────────────────────────────────
 
 local function write_title()
-  if modal.write_mode == "preview" and modal.preview_idx then
+  if modal.preview_idx and not modal.editing_idx then
     return string.format("  Preview [%d]  ", modal.preview_idx)
   end
   if modal.editing_idx then
@@ -184,17 +182,27 @@ local function update_write_title()
   end
 end
 
-local function clear_write_buf()
+-- ── enter_new_mode: clear write pane, focus it, ready for new note ────────────
+
+local function enter_new_mode()
+  modal.editing_idx = nil
+  modal.preview_idx = nil
   if modal.write_buf and vim.api.nvim_buf_is_valid(modal.write_buf) then
     vim.bo[modal.write_buf].modifiable = true
     vim.api.nvim_buf_set_lines(modal.write_buf, 0, -1, false, { "" })
+    vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
+  end
+  update_write_title()
+  if modal.write_win and vim.api.nvim_win_is_valid(modal.write_win) then
+    vim.api.nvim_set_current_win(modal.write_win)
+    vim.cmd("startinsert")
   end
 end
 
--- ── Preview ───────────────────────────────────────────────────────────────────
+-- ── Preview: fill write pane with note content (stays modifiable) ─────────────
 
 local function show_preview(idx)
-  if modal.write_mode == "edit" then return end
+  if modal.editing_idx then return end
   if not modal.write_buf or not vim.api.nvim_buf_is_valid(modal.write_buf) then return end
   local notes = load_notes()
   local note  = notes[idx]
@@ -217,15 +225,11 @@ local function show_preview(idx)
 
   vim.bo[modal.write_buf].modifiable = true
   vim.api.nvim_buf_set_lines(modal.write_buf, 0, -1, false, lines)
-  vim.bo[modal.write_buf].modifiable = false
 
-  -- Highlight the separator line if code is present
+  vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
   if note.code then
     local sep_line = line_count(note.note) + 1  -- 0-indexed: note lines + blank
-    vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
     vim.api.nvim_buf_add_highlight(modal.write_buf, hl_ns, "AiNotesSep", sep_line, 0, -1)
-  else
-    vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
   end
 
   update_write_title()
@@ -263,8 +267,8 @@ local function render_list(notes)
     end
     for i, note in ipairs(notes) do
       lines[#lines + 1] = string.format("[%d] %s", i, loc_str(note))
-      modal.note_map[#lines]     = i
-      modal.header_lines[i]      = #lines
+      modal.note_map[#lines]  = i
+      modal.header_lines[i]   = #lines
 
       local preview = first_line(note.note)
       if #preview > max_p then preview = preview:sub(1, max_p - 3) .. "..." end
@@ -292,38 +296,40 @@ local function render_list(notes)
   apply_list_highlights(notes)
 end
 
--- ── Prompt review float ───────────────────────────────────────────────────────
+-- ── Prompt review (new tab) ───────────────────────────────────────────────────
 
 local function open_prompt_review(notes)
   if #notes == 0 then
     vim.notify("[ai_notes] no notes to bake", vim.log.levels.WARN)
     return
   end
-  local lines = build_prompt_lines(notes)
-  local buf   = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.bo[buf].filetype   = "text"
-  vim.bo[buf].modifiable = true
-  vim.bo[buf].swapfile   = false
 
-  local w   = math.floor(vim.o.columns * 0.78)
-  local h   = math.floor(vim.o.lines   * 0.78)
-  local win = vim.api.nvim_open_win(buf, true, {
-    relative  = "editor",
-    row       = math.floor((vim.o.lines   - h) / 2),
-    col       = math.floor((vim.o.columns - w) / 2),
-    width     = w, height = h,
-    style     = "minimal", border = "rounded",
-    title     = "  Prompt — edit freely · <CR> copy to clipboard · q discard  ",
-    title_pos = "center",
-    zindex    = 100,
-  })
+  if is_modal_open() then close_modal() end
+
+  -- close any existing ai prompt tabs
+  for _, tabnr in ipairs(vim.api.nvim_list_tabpages()) do
+    local wins = vim.api.nvim_tabpage_list_wins(tabnr)
+    if #wins == 1 then
+      local tbuf = vim.api.nvim_win_get_buf(wins[1])
+      if vim.b[tbuf].ai_prompt_tab then
+        pcall(vim.cmd, "tabclose " .. vim.api.nvim_tabpage_get_number(tabnr))
+      end
+    end
+  end
+
+  local lines = build_prompt_lines(notes)
+  vim.cmd("tabnew")
+  local buf = vim.api.nvim_get_current_buf()
+  local win = vim.api.nvim_get_current_win()
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].buftype    = "nofile"
+  vim.bo[buf].swapfile   = false
+  vim.bo[buf].modifiable = true
+  vim.bo[buf].filetype   = "text"
+  vim.b[buf].ai_prompt_tab = true
   vim.wo[win].wrap = true
 
-  local opts = { buffer = buf, nowait = true, silent = true }
-
   local function copy_and_close()
-    if not vim.api.nvim_win_is_valid(win) then return end
     local all  = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     local text = table.concat(all, "\n")
     local ok, err = pcall(vim.fn.setreg, "+", text)
@@ -332,18 +338,18 @@ local function open_prompt_review(notes)
     else
       vim.notify("[ai_notes] clipboard unavailable: " .. tostring(err), vim.log.levels.WARN)
     end
-    vim.api.nvim_win_close(win, true)
+    pcall(vim.cmd, "tabclose")
   end
 
-  vim.keymap.set("n", "<CR>",  copy_and_close,                                   opts)
-  vim.keymap.set("n", "q",     function() vim.api.nvim_win_close(win, true) end, opts)
-  vim.keymap.set("n", "<Esc>", function() vim.api.nvim_win_close(win, true) end, opts)
+  local opts = { buffer = buf, nowait = true, silent = true }
+  vim.keymap.set("n", "<CR>",  copy_and_close,                          opts)
+  vim.keymap.set("n", "q",     function() pcall(vim.cmd, "tabclose") end, opts)
+  vim.keymap.set("n", "<Esc>", function() pcall(vim.cmd, "tabclose") end, opts)
 end
 
 -- ── Submit note ───────────────────────────────────────────────────────────────
 
 local function submit_note()
-  if modal.write_mode ~= "edit" then return end
   if not modal.write_buf or not vim.api.nvim_buf_is_valid(modal.write_buf) then return end
 
   local lines = vim.api.nvim_buf_get_lines(modal.write_buf, 0, -1, false)
@@ -382,19 +388,9 @@ local function submit_note()
   end
 
   save_notes(notes)
-
-  local saved_idx  = was_editing or #notes
-  modal.editing_idx = nil
-  modal.pending     = {}
-  modal.write_mode  = "preview"
-
   render_list(notes)
-
-  if modal.header_lines[saved_idx] then
-    vim.api.nvim_win_set_cursor(modal.list_win, { modal.header_lines[saved_idx], 0 })
-  end
-  show_preview(saved_idx)
   vim.notify("[ai_notes] note saved (" .. #notes .. " total)", vim.log.levels.INFO)
+  enter_new_mode()
 end
 
 -- ── Keymaps ───────────────────────────────────────────────────────────────────
@@ -423,35 +419,23 @@ local function jump_to_note_header(idx)
   end
 end
 
-local function enter_edit_mode(note_lines, editing_idx, pending_ctx)
-  modal.write_mode  = "edit"
-  modal.editing_idx = editing_idx
-  modal.pending     = pending_ctx or modal.pending
-  vim.bo[modal.write_buf].modifiable = true
-  vim.api.nvim_buf_set_lines(modal.write_buf, 0, -1, false, note_lines or { "" })
-  vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
-  update_write_title()
-  focus_write()
-end
-
 local function setup_write_keymaps()
   local opts = { buffer = modal.write_buf, nowait = true, silent = true }
-  vim.keymap.set("n", "<CR>",   submit_note, opts)
-  vim.keymap.set("n", "<Tab>",  focus_list,  opts)
-  vim.keymap.set("n", "q",      close_modal, opts)
-  vim.keymap.set("n", "<Esc>",  close_modal, opts)
+  vim.keymap.set("n", "<CR>",  submit_note, opts)
+  vim.keymap.set("n", "<Tab>", focus_list,  opts)
+  vim.keymap.set("n", "q",     close_modal, opts)
+  vim.keymap.set("n", "<Esc>", close_modal, opts)
   vim.keymap.set("n", "<C-b>", function() open_prompt_review(load_notes()) end, opts)
 end
 
 local function setup_list_keymaps()
   local opts = { buffer = modal.list_buf, nowait = true, silent = true }
 
-  -- Note-by-note navigation
+  -- note-by-note navigation
   vim.keymap.set("n", "j", function()
-    local idx   = get_list_note_idx() or 0
-    local notes = load_notes()
-    local next  = idx + 1
-    if next <= #notes then jump_to_note_header(next) end
+    local idx  = get_list_note_idx() or 0
+    local next = idx + 1
+    if next <= #load_notes() then jump_to_note_header(next) end
   end, opts)
 
   vim.keymap.set("n", "k", function()
@@ -460,10 +444,16 @@ local function setup_list_keymaps()
     if prev >= 1 then jump_to_note_header(prev) end
   end, opts)
 
-  vim.keymap.set("n", "<Tab>", focus_write, opts)
-  vim.keymap.set("n", "q",     close_modal, opts)
-  vim.keymap.set("n", "<Esc>", close_modal, opts)
+  -- Tab: go back to write pane in insert mode
+  vim.keymap.set("n", "<Tab>", function()
+    focus_write()
+    vim.cmd("startinsert")
+  end, opts)
 
+  vim.keymap.set("n", "q",     close_modal,    opts)
+  vim.keymap.set("n", "<Esc>", enter_new_mode, opts)
+
+  -- add new note from source window position
   vim.keymap.set("n", "a", function()
     local pending = modal.pending
     if modal.source_win and vim.api.nvim_win_is_valid(modal.source_win) then
@@ -474,19 +464,31 @@ local function setup_list_keymaps()
         pending = { file = rel_path(name), line_start = cursor[1], line_end = cursor[1] }
       end
     end
-    enter_edit_mode({ "" }, nil, pending)
+    modal.pending = pending
+    enter_new_mode()
   end, opts)
 
+  -- edit selected note
   vim.keymap.set("n", "e", function()
     local idx = get_list_note_idx()
     if not idx then return end
     local notes = load_notes()
     local note  = notes[idx]
     if not note then return end
-    local note_lines = vim.split(note.note, "\n", { plain = true })
-    enter_edit_mode(note_lines, idx, {})
+    modal.editing_idx = idx
+    modal.preview_idx = nil
+    if modal.write_buf and vim.api.nvim_buf_is_valid(modal.write_buf) then
+      vim.bo[modal.write_buf].modifiable = true
+      vim.api.nvim_buf_set_lines(modal.write_buf, 0, -1, false,
+        vim.split(note.note, "\n", { plain = true }))
+      vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
+    end
+    update_write_title()
+    focus_write()
+    vim.cmd("startinsert")
   end, opts)
 
+  -- delete selected note
   vim.keymap.set("n", "d", function()
     local idx = get_list_note_idx()
     if not idx then return end
@@ -494,32 +496,28 @@ local function setup_list_keymaps()
     table.remove(notes, idx)
     save_notes(notes)
     render_list(notes)
-    -- show next or previous after deletion
     local new_idx = math.min(idx, #notes)
     if new_idx >= 1 then
       jump_to_note_header(new_idx)
-      modal.write_mode = "preview"
       show_preview(new_idx)
     else
-      modal.write_mode = "edit"
-      clear_write_buf()
-      update_write_title()
+      enter_new_mode()
     end
   end, opts)
 
+  -- clear all notes
   vim.keymap.set("n", "D", function()
     vim.ui.input({ prompt = "Clear all notes? (yes/no): " }, function(answer)
       if answer == "yes" then
         save_notes({})
         render_list({})
-        modal.write_mode = "edit"
-        clear_write_buf()
-        update_write_title()
         vim.notify("[ai_notes] all notes cleared", vim.log.levels.INFO)
+        enter_new_mode()
       end
     end)
   end, opts)
 
+  -- jump to file at note location
   vim.keymap.set("n", "<CR>", function()
     local idx = get_list_note_idx()
     if not idx then return end
@@ -540,26 +538,12 @@ local function setup_list_keymaps()
     open_prompt_review(load_notes())
   end, opts)
 
-  vim.keymap.set("n", "c", function()
-    local notes = load_notes()
-    if #notes == 0 then
-      vim.notify("[ai_notes] no notes", vim.log.levels.WARN)
-      return
-    end
-    local text = table.concat(build_prompt_lines(notes), "\n")
-    local ok, err = pcall(vim.fn.setreg, "+", text)
-    if ok then
-      vim.notify("[ai_notes] prompt copied to clipboard", vim.log.levels.INFO)
-    else
-      vim.notify("[ai_notes] clipboard unavailable: " .. tostring(err), vim.log.levels.WARN)
-    end
-  end, opts)
-
   vim.keymap.set("n", "r", function()
     local notes = load_notes()
     render_list(notes)
-    local idx = modal.preview_idx
-    if idx and idx <= #notes then show_preview(idx) end
+    if not modal.editing_idx and modal.preview_idx and modal.preview_idx <= #notes then
+      show_preview(modal.preview_idx)
+    end
   end, opts)
 end
 
@@ -604,23 +588,32 @@ local function open_modal_windows()
 
   for _, key in ipairs({ "write_win", "list_win" }) do
     vim.api.nvim_create_autocmd("WinClosed", {
-      group   = augroup,
-      pattern = tostring(modal[key]),
-      once    = true,
+      group    = augroup,
+      pattern  = tostring(modal[key]),
+      once     = true,
       callback = function() vim.schedule(close_modal) end,
     })
   end
 
-  -- Live preview: update write pane when list cursor moves to a different note
+  -- live preview when cursor moves to a different note in the list
   vim.api.nvim_create_autocmd("CursorMoved", {
     group  = augroup,
     buffer = modal.list_buf,
     callback = function()
-      if modal.write_mode == "edit" then return end
+      if modal.editing_idx then return end
       local idx = get_list_note_idx()
-      if idx and idx ~= modal.preview_idx then
-        show_preview(idx)
-      end
+      if idx and idx ~= modal.preview_idx then show_preview(idx) end
+    end,
+  })
+
+  -- show preview when entering list pane (e.g. via Tab)
+  vim.api.nvim_create_autocmd("WinEnter", {
+    group  = augroup,
+    buffer = modal.list_buf,
+    callback = function()
+      if modal.editing_idx then return end
+      local idx = get_list_note_idx()
+      if idx and idx ~= modal.preview_idx then show_preview(idx) end
     end,
   })
 
@@ -629,16 +622,12 @@ local function open_modal_windows()
   setup_write_keymaps()
   setup_list_keymaps()
 
-  -- Initial state: if notes exist, show preview of first; otherwise ready to write
+  -- position list cursor on first note; always open in write pane + insert mode
   if #notes > 0 then
-    modal.write_mode = "preview"
     jump_to_note_header(1)
-    show_preview(1)
-    focus_list()
-  else
-    modal.write_mode = "edit"
-    focus_write()
   end
+  focus_write()
+  vim.cmd("startinsert")
 end
 
 -- ── Public open functions ─────────────────────────────────────────────────────
@@ -719,9 +708,7 @@ function M.clear_notes()
       save_notes({})
       if is_modal_open() then
         render_list({})
-        modal.write_mode = "edit"
-        clear_write_buf()
-        update_write_title()
+        enter_new_mode()
       end
       vim.notify("[ai_notes] all notes cleared", vim.log.levels.INFO)
     end
@@ -732,7 +719,10 @@ end
 
 function M.setup()
   setup_highlights()
-  vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_highlights })
+  -- Re-apply after theme clears highlights (theme uses BufEnter/WinEnter/VimEnter autocmds)
+  vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter", "WinEnter", "BufEnter" }, {
+    callback = setup_highlights,
+  })
 
   vim.keymap.set("n", "<leader>a", M.open_modal,  { desc = "AI Notes" })
   vim.keymap.set("n", "<leader>A", M.bake_prompt, { desc = "AI Notes: prompt review" })
