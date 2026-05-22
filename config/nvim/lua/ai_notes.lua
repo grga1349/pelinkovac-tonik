@@ -296,7 +296,7 @@ local function render_list(notes)
   apply_list_highlights(notes)
 end
 
--- ── Prompt review (new tab) ───────────────────────────────────────────────────
+-- ── Prompt review modal ───────────────────────────────────────────────────────
 
 local function open_prompt_review(notes)
   if #notes == 0 then
@@ -306,30 +306,32 @@ local function open_prompt_review(notes)
 
   if is_modal_open() then close_modal() end
 
-  -- close any existing ai prompt tabs
-  for _, tabnr in ipairs(vim.api.nvim_list_tabpages()) do
-    local wins = vim.api.nvim_tabpage_list_wins(tabnr)
-    if #wins == 1 then
-      local tbuf = vim.api.nvim_win_get_buf(wins[1])
-      if vim.b[tbuf].ai_prompt_tab then
-        pcall(vim.cmd, "tabclose " .. vim.api.nvim_tabpage_get_number(tabnr))
-      end
-    end
-  end
+  local w   = math.floor(vim.o.columns * 0.82)
+  local h   = math.floor(vim.o.lines   * 0.78)
+  local row = math.floor((vim.o.lines   - h) / 2)
+  local col = math.floor((vim.o.columns - w) / 2)
 
   local lines = build_prompt_lines(notes)
-  vim.cmd("tabnew")
-  local buf = vim.api.nvim_get_current_buf()
-  local win = vim.api.nvim_get_current_win()
+  local buf   = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].buftype    = "nofile"
   vim.bo[buf].swapfile   = false
   vim.bo[buf].modifiable = true
   vim.bo[buf].filetype   = "text"
-  vim.b[buf].ai_prompt_tab = true
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative  = "editor",
+    row = row, col = col,
+    width = w, height = h,
+    style = "minimal", border = "rounded",
+    title     = "  Prompt — edit freely · <CR> copy · q close  ",
+    title_pos = "center",
+    zindex    = 60,
+  })
   vim.wo[win].wrap = true
 
   local function copy_and_close()
+    if not vim.api.nvim_win_is_valid(win) then return end
     local all  = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     local text = table.concat(all, "\n")
     local ok, err = pcall(vim.fn.setreg, "+", text)
@@ -338,13 +340,13 @@ local function open_prompt_review(notes)
     else
       vim.notify("[ai_notes] clipboard unavailable: " .. tostring(err), vim.log.levels.WARN)
     end
-    pcall(vim.cmd, "tabclose")
+    pcall(vim.api.nvim_win_close, win, true)
   end
 
   local opts = { buffer = buf, nowait = true, silent = true }
-  vim.keymap.set("n", "<CR>",  copy_and_close,                          opts)
-  vim.keymap.set("n", "q",     function() pcall(vim.cmd, "tabclose") end, opts)
-  vim.keymap.set("n", "<Esc>", function() pcall(vim.cmd, "tabclose") end, opts)
+  vim.keymap.set("n", "<CR>",  copy_and_close,                                        opts)
+  vim.keymap.set("n", "q",     function() pcall(vim.api.nvim_win_close, win, true) end, opts)
+  vim.keymap.set("n", "<Esc>", function() pcall(vim.api.nvim_win_close, win, true) end, opts)
 end
 
 -- ── Submit note ───────────────────────────────────────────────────────────────
