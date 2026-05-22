@@ -85,7 +85,7 @@ local function apply_theme_overrides()
   set(0, "Normal", { fg = colors.fg, bg = colors.bg })
   set(0, "NormalNC", { fg = colors.fg, bg = colors.bg })
   set(0, "NormalFloat", { fg = colors.fg, bg = colors.bg })
-  set(0, "FloatBorder", { fg = colors.muted, bg = colors.bg })
+  set(0, "FloatBorder", { fg = colors.bg_alt, bg = colors.bg })
   set(0, "SignColumn", { bg = colors.bg })
   set(0, "EndOfBuffer", { fg = colors.bg, bg = colors.bg })
   set(0, "LineNr", { fg = colors.muted, bg = colors.bg })
@@ -209,7 +209,7 @@ require("lazy").setup({
         },
         filters = {
           dotfiles = false,
-          gitignore = false,
+          git_ignored = false,
         },
         git = {
           enable = true,
