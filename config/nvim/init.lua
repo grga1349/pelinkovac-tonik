@@ -294,6 +294,64 @@ require("lazy").setup({
     },
   },
   {
+    "lewis6991/gitsigns.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("gitsigns").setup({
+        signs = {
+          add = { text = "+" },
+          change = { text = "~" },
+          delete = { text = "_" },
+          topdelete = { text = "^" },
+          changedelete = { text = "~" },
+          untracked = { text = "+" },
+        },
+        current_line_blame = false,
+        current_line_blame_opts = {
+          delay = 300,
+          virt_text_pos = "eol",
+        },
+        on_attach = function(bufnr)
+          local gs = package.loaded.gitsigns
+
+          local function map(mode, lhs, rhs, desc)
+            vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+          end
+
+          map("n", "]h", function()
+            if vim.wo.diff then
+              vim.cmd.normal({ "]h", bang = true })
+            else
+              gs.nav_hunk("next")
+            end
+          end, "Next git hunk")
+
+          map("n", "[h", function()
+            if vim.wo.diff then
+              vim.cmd.normal({ "[h", bang = true })
+            else
+              gs.nav_hunk("prev")
+            end
+          end, "Previous git hunk")
+
+          map("n", "<leader>gb", gs.blame_line, "Git blame line")
+          map("n", "<leader>gB", gs.toggle_current_line_blame, "Toggle git blame")
+          map("n", "<leader>gp", gs.preview_hunk, "Preview git hunk")
+          map("n", "<leader>gs", gs.stage_hunk, "Stage git hunk")
+          map("n", "<leader>gr", gs.reset_hunk, "Reset git hunk")
+          map("n", "<leader>gd", gs.diffthis, "Git diff")
+          map("n", "<leader>gq", gs.setqflist, "Git hunks quickfix")
+          map("v", "<leader>gs", function()
+            gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+          end, "Stage selected git hunk")
+          map("v", "<leader>gr", function()
+            gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+          end, "Reset selected git hunk")
+        end,
+      })
+    end,
+  },
+  {
     "joerdav/templ.vim",
     ft = "templ",
   },

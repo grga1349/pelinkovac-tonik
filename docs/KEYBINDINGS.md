@@ -29,6 +29,13 @@
 - Rename: `Space r n`
 - Code action: `Space c a`
 - Format: `Space f`
+- Git blame line: `Space g b`
+- Toggle inline git blame: `Space g B`
+- Preview hunk: `Space g p`
+- Stage/reset hunk: `Space g s`, `Space g r`
+- Git diff: `Space g d`
+- Git hunks quickfix: `Space g q`
+- Previous/next hunk: `[ h`, `] h`
 - AI Notes panel: `Space a`
 - AI Notes visual note: `Space a` in visual mode (attaches selected code)
 - AI Notes prompt review: `Space A`
