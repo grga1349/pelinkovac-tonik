@@ -29,8 +29,7 @@
 - Rename: `Space r n`
 - Code action: `Space c a`
 - Format: `Space f`
-- Toggle inline git blame: `Space g l`
-- Git blame details: `Space g L`
+- Git blame: shown in the statusline as current commit and author
 - Preview hunk: `Space g p`
 - Stage/reset hunk: `Space g s`, `Space g r`
 - Git diff: `Space g d`

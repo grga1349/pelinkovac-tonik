@@ -21,6 +21,7 @@ vim.opt.timeoutlen = 400
 vim.opt.colorcolumn = "120"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.autoread = true
+vim.opt.laststatus = 2
 
 vim.filetype.add({
   extension = {
@@ -81,6 +82,72 @@ local colors = {
   yellow     = "#dcdcaa",
   purple     = "#c586c0",
 }
+
+local function statusline_escape(value)
+  return tostring(value or ""):gsub("%%", "%%%%")
+end
+
+local function git_blame_status()
+  local blame = vim.b.gitsigns_blame_line_dict
+  if type(blame) ~= "table" then
+    return ""
+  end
+
+  local author = blame.author
+  local sha = blame.abbrev_sha
+  if type(author) ~= "string" or author == "" then
+    return ""
+  end
+  if type(sha) ~= "string" or sha == "" or sha:match("^0+$") then
+    return "uncommitted " .. author
+  end
+
+  return sha .. " " .. author
+end
+
+function _G.ptx_statusline()
+  local file = vim.fn.expand("%:~:.")
+  if file == "" then
+    file = "[No Name]"
+  end
+  if vim.bo.filetype == "NvimTree" then
+    file = "NvimTree"
+  end
+
+  local flags = ""
+  if vim.bo.modified then
+    flags = flags .. " [+]"
+  end
+  if vim.bo.readonly then
+    flags = flags .. " [RO]"
+  end
+
+  local left = " " .. statusline_escape(file) .. flags
+  local right = {}
+  local blame = git_blame_status()
+  if blame ~= "" then
+    table.insert(right, statusline_escape(blame))
+  end
+  if vim.bo.filetype ~= "" and vim.bo.filetype ~= "NvimTree" then
+    table.insert(right, statusline_escape(vim.bo.filetype))
+  end
+
+  return left .. "%=" .. table.concat(right, "  ") .. " "
+end
+
+vim.opt.statusline = "%!v:lua.ptx_statusline()"
+
+vim.api.nvim_create_autocmd({ "BufEnter", "CursorMoved", "CursorMovedI" }, {
+  group = vim.api.nvim_create_augroup("ptx_statusline_blame", { clear = true }),
+  callback = function(args)
+    local bufnr = args.buf
+    vim.defer_fn(function()
+      if vim.api.nvim_get_current_buf() == bufnr then
+        vim.cmd("redrawstatus")
+      end
+    end, 350)
+  end,
+})
 
 local function apply_theme_overrides()
   local set = vim.api.nvim_set_hl
@@ -299,20 +366,6 @@ require("lazy").setup({
     event = { "BufReadPre", "BufNewFile" },
     keys = {
       {
-        "<leader>gl",
-        function()
-          require("gitsigns").toggle_current_line_blame()
-        end,
-        desc = "Toggle inline git blame",
-      },
-      {
-        "<leader>gL",
-        function()
-          require("gitsigns").blame_line({ full = true })
-        end,
-        desc = "Git blame details",
-      },
-      {
         "<leader>gp",
         function()
           require("gitsigns").preview_hunk()
@@ -399,10 +452,10 @@ require("lazy").setup({
         current_line_blame = true,
         current_line_blame_opts = {
           delay = 300,
-          virt_text_pos = "eol",
+          virt_text = false,
         },
-        current_line_blame_formatter = "  <author>, <author_time:%Y-%m-%d> - <summary>",
-        current_line_blame_formatter_nc = "  Uncommitted changes",
+        current_line_blame_formatter = "<abbrev_sha> <author>",
+        current_line_blame_formatter_nc = "uncommitted <author>",
       })
     end,
   },
