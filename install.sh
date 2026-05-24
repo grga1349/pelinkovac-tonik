@@ -121,8 +121,7 @@ if [[ "$install_dotfiles" -eq 1 ]]; then
   printf '%s\n' 'Installed Neovim, tmux, Ghostty, diffnav, delta, and p10k config.'
   if command -v tmux &>/dev/null && tmux info &>/dev/null 2>&1; then
     tmux source-file ~/.tmux.conf
-    tmux list-panes -a -F '#{pane_id}' | xargs -I{} tmux send-keys -t {} 'source ~/.zshrc' Enter
-    printf '%s\n' 'Reloaded active tmux sessions and sourced zshrc in all panes.'
+    printf '%s\n' 'Reloaded active tmux session.'
   fi
 fi
 
