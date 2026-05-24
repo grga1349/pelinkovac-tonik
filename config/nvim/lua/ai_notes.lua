@@ -147,7 +147,7 @@ local function build_prompt_lines(notes)
   return lines
 end
 
-local function apply_prompt_highlights(buf, lines, notes)
+local function apply_prompt_highlights(buf, lines, notes, conceal_markers)
   vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
   local in_code        = false
   local code_start     = nil
@@ -176,13 +176,21 @@ local function apply_prompt_highlights(buf, lines, notes)
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesIndex",    lnum, 0, dot_space + 1)
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLocation", lnum, dot_space + 2, -1)
     elseif line == "----- BEGIN SELECTED CODE -----" then
-      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
+      if conceal_markers then
+        vim.api.nvim_buf_set_extmark(buf, hl_ns, lnum, 0, { end_col = #line, conceal = "" })
+      else
+        vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
+      end
       in_code    = true
       code_start = lnum + 1
       code_acc   = {}
     elseif line == "----- END SELECTED CODE -----" then
       flush_code()
-      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
+      if conceal_markers then
+        vim.api.nvim_buf_set_extmark(buf, hl_ns, lnum, 0, { end_col = #line, conceal = "" })
+      else
+        vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
+      end
       in_code = false
     elseif in_code then
       table.insert(code_acc, line)
@@ -317,8 +325,8 @@ local function show_preview(idx)
   vim.bo[modal.write_buf].modifiable = true
   vim.api.nvim_buf_set_lines(modal.write_buf, 0, -1, false, lines)
 
-  -- apply label/sep highlights first (no numbered header so note_idx stays 0)
-  apply_prompt_highlights(modal.write_buf, lines, nil)
+  -- apply label/sep highlights; conceal BEGIN/END markers since this is display-only
+  apply_prompt_highlights(modal.write_buf, lines, nil, true)
 
   -- then apply treesitter to the code block if present
   if note.code then
@@ -419,7 +427,7 @@ local function open_prompt_review(notes)
   vim.bo[buf].swapfile   = false
   vim.bo[buf].modifiable = true
   vim.bo[buf].filetype   = "text"
-  apply_prompt_highlights(buf, lines, notes)
+  apply_prompt_highlights(buf, lines, notes, true)
 
   local win = vim.api.nvim_open_win(buf, true, {
     relative  = "editor",
@@ -430,7 +438,8 @@ local function open_prompt_review(notes)
     title_pos = "center",
     zindex    = 60,
   })
-  vim.wo[win].wrap = true
+  vim.wo[win].wrap         = true
+  vim.wo[win].conceallevel = 3
 
   local function copy_and_close()
     if not vim.api.nvim_win_is_valid(win) then return end
@@ -448,7 +457,7 @@ local function open_prompt_review(notes)
   vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
     buffer   = buf,
     callback = function()
-      apply_prompt_highlights(buf, vim.api.nvim_buf_get_lines(buf, 0, -1, false), notes)
+      apply_prompt_highlights(buf, vim.api.nvim_buf_get_lines(buf, 0, -1, false), notes, true)
     end,
   })
 
@@ -682,6 +691,7 @@ local function open_modal_windows()
   vim.wo[modal.write_win].wrap           = true
   vim.wo[modal.write_win].number         = false
   vim.wo[modal.write_win].relativenumber = false
+  vim.wo[modal.write_win].conceallevel   = 3
 
   modal.list_win = vim.api.nvim_open_win(modal.list_buf, false, {
     relative  = "editor",
