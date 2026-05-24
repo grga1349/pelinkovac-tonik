@@ -110,6 +110,7 @@ local function apply_theme_overrides()
   set(0, "PmenuSel", { fg = colors.fg, bg = colors.bg_alt })
   set(0, "StatusLine", { fg = colors.fg, bg = colors.bg })
   set(0, "StatusLineNC", { fg = colors.muted, bg = colors.bg })
+  set(0, "GitSignsCurrentLineBlame", { fg = colors.muted, bg = colors.bg })
 
   set(0, "Comment", { fg = colors.subtle, italic = true })
   set(0, "String", { fg = colors.orange })
@@ -296,6 +297,95 @@ require("lazy").setup({
   {
     "lewis6991/gitsigns.nvim",
     event = { "BufReadPre", "BufNewFile" },
+    keys = {
+      {
+        "<leader>gb",
+        function()
+          require("gitsigns").toggle_current_line_blame()
+        end,
+        desc = "Toggle inline git blame",
+      },
+      {
+        "<leader>gB",
+        function()
+          require("gitsigns").blame_line({ full = true })
+        end,
+        desc = "Git blame details",
+      },
+      {
+        "<leader>gp",
+        function()
+          require("gitsigns").preview_hunk()
+        end,
+        desc = "Preview git hunk",
+      },
+      {
+        "<leader>gs",
+        function()
+          require("gitsigns").stage_hunk()
+        end,
+        desc = "Stage git hunk",
+      },
+      {
+        "<leader>gr",
+        function()
+          require("gitsigns").reset_hunk()
+        end,
+        desc = "Reset git hunk",
+      },
+      {
+        "<leader>gd",
+        function()
+          require("gitsigns").diffthis()
+        end,
+        desc = "Git diff",
+      },
+      {
+        "<leader>gq",
+        function()
+          require("gitsigns").setqflist()
+        end,
+        desc = "Git hunks quickfix",
+      },
+      {
+        "]h",
+        function()
+          if vim.wo.diff then
+            vim.cmd.normal({ "]h", bang = true })
+          else
+            require("gitsigns").nav_hunk("next")
+          end
+        end,
+        desc = "Next git hunk",
+      },
+      {
+        "[h",
+        function()
+          if vim.wo.diff then
+            vim.cmd.normal({ "[h", bang = true })
+          else
+            require("gitsigns").nav_hunk("prev")
+          end
+        end,
+        desc = "Previous git hunk",
+      },
+      {
+        "<leader>gs",
+        function()
+          require("gitsigns").stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end,
+        mode = "v",
+        desc = "Stage selected git hunk",
+      },
+      {
+        "<leader>gr",
+        function()
+          require("gitsigns").reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end,
+        mode = "v",
+        desc = "Reset selected git hunk",
+      },
+    },
     config = function()
       require("gitsigns").setup({
         signs = {
@@ -311,43 +401,8 @@ require("lazy").setup({
           delay = 300,
           virt_text_pos = "eol",
         },
-        on_attach = function(bufnr)
-          local gs = package.loaded.gitsigns
-
-          local function map(mode, lhs, rhs, desc)
-            vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
-          end
-
-          map("n", "]h", function()
-            if vim.wo.diff then
-              vim.cmd.normal({ "]h", bang = true })
-            else
-              gs.nav_hunk("next")
-            end
-          end, "Next git hunk")
-
-          map("n", "[h", function()
-            if vim.wo.diff then
-              vim.cmd.normal({ "[h", bang = true })
-            else
-              gs.nav_hunk("prev")
-            end
-          end, "Previous git hunk")
-
-          map("n", "<leader>gb", gs.blame_line, "Git blame line")
-          map("n", "<leader>gB", gs.toggle_current_line_blame, "Toggle git blame")
-          map("n", "<leader>gp", gs.preview_hunk, "Preview git hunk")
-          map("n", "<leader>gs", gs.stage_hunk, "Stage git hunk")
-          map("n", "<leader>gr", gs.reset_hunk, "Reset git hunk")
-          map("n", "<leader>gd", gs.diffthis, "Git diff")
-          map("n", "<leader>gq", gs.setqflist, "Git hunks quickfix")
-          map("v", "<leader>gs", function()
-            gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
-          end, "Stage selected git hunk")
-          map("v", "<leader>gr", function()
-            gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
-          end, "Reset selected git hunk")
-        end,
+        current_line_blame_formatter = "  <author>, <author_time:%Y-%m-%d> - <summary>",
+        current_line_blame_formatter_nc = "  Uncommitted changes",
       })
     end,
   },
