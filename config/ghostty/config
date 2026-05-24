@@ -43,12 +43,12 @@
 # resize-overlay-duration = 4s 200ms
 
 font-size=16
-background=#100F0D
+background=#1B1916
 foreground=#E8E2D9
 cursor-color=#D4935A
-selection-background=#242119
+selection-background=#2D2A25
 selection-foreground=#E8E2D9
-palette=0=#100F0D
+palette=0=#1B1916
 palette=1=#B87575
 palette=2=#7FA36B
 palette=3=#D0A15A

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-bg="#100F0D"
-bg_alt="#1B1916"
+bg="#1B1916"
+bg_alt="#242119"
 fg="#E8E2D9"
 accent="#D4935A"
 blue="#B87575"

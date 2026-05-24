@@ -76,6 +76,48 @@ local function setup_highlights()
   vim.api.nvim_set_hl(0, "AiNotesLabel",          { fg = "#D0A15A" })
 end
 
+-- ── Treesitter helpers ────────────────────────────────────────────────────────
+
+local ext_to_lang = {
+  go = "go", lua = "lua",
+  js = "javascript", ts = "typescript", jsx = "javascript", tsx = "tsx",
+  py = "python", rb = "ruby", rs = "rust",
+  c = "c", cpp = "cpp", cs = "c_sharp",
+  java = "java", sh = "bash", bash = "bash",
+  html = "html", css = "css", json = "json",
+  md = "markdown", yaml = "yaml", yml = "yaml", toml = "toml",
+}
+
+local function lang_from_path(filepath)
+  if not filepath then return nil end
+  local ext = filepath:match("%.([^%.]+)$")
+  return ext and ext_to_lang[ext]
+end
+
+local function syntax_highlight_code(buf, code_str, start_lnum, lang)
+  if not lang or code_str == "" then return end
+  local ok_p, parser = pcall(vim.treesitter.get_string_parser, code_str, lang)
+  if not ok_p or not parser then return end
+  local trees = parser:parse()
+  if not trees or not trees[1] then return end
+  local root = trees[1]:root()
+  local ok_q, query = pcall(vim.treesitter.query.get, lang, "highlights")
+  if not ok_q or not query then return end
+  for id, node in query:iter_captures(root, code_str, 0, -1) do
+    local hl = "@" .. query.captures[id]
+    local r1, c1, r2, c2 = node:range()
+    if r1 == r2 then
+      pcall(vim.api.nvim_buf_add_highlight, buf, hl_ns, hl, start_lnum + r1, c1, c2)
+    else
+      pcall(vim.api.nvim_buf_add_highlight, buf, hl_ns, hl, start_lnum + r1, c1, -1)
+      for row = r1 + 1, r2 - 1 do
+        pcall(vim.api.nvim_buf_add_highlight, buf, hl_ns, hl, start_lnum + row, 0, -1)
+      end
+      pcall(vim.api.nvim_buf_add_highlight, buf, hl_ns, hl, start_lnum + r2, 0, c2)
+    end
+  end
+end
+
 -- ── Prompt generation ─────────────────────────────────────────────────────────
 
 local function build_prompt_lines(notes)
@@ -105,9 +147,22 @@ local function build_prompt_lines(notes)
   return lines
 end
 
-local function apply_prompt_highlights(buf, lines)
+local function apply_prompt_highlights(buf, lines, notes)
   vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
-  local in_code = false
+  local in_code        = false
+  local code_start     = nil
+  local code_acc       = {}
+  local current_lang   = nil
+  local note_idx       = 0
+
+  local function flush_code()
+    if code_start and #code_acc > 0 then
+      syntax_highlight_code(buf, table.concat(code_acc, "\n"), code_start, current_lang)
+    end
+    code_acc   = {}
+    code_start = nil
+  end
+
   for i, line in ipairs(lines) do
     local lnum = i - 1
     if line == "TASK" or line == "NOTES" then
@@ -115,23 +170,29 @@ local function apply_prompt_highlights(buf, lines)
     elseif line == "Note:" or line == "Selected code:" then
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLabel", lnum, 0, -1)
     elseif line:match("^%d+%. ") then
+      note_idx = note_idx + 1
+      current_lang = notes and notes[note_idx] and lang_from_path(notes[note_idx].file)
       local dot_space = line:find("%. ")
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesIndex",    lnum, 0, dot_space + 1)
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLocation", lnum, dot_space + 2, -1)
     elseif line == "----- BEGIN SELECTED CODE -----" then
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
-      in_code = true
+      in_code    = true
+      code_start = lnum + 1
+      code_acc   = {}
     elseif line == "----- END SELECTED CODE -----" then
+      flush_code()
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
       in_code = false
     elseif in_code then
-      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesCode", lnum, 0, -1)
+      table.insert(code_acc, line)
     elseif line:match("^Use the notes") or line:match("^Preserve")
         or line:match("^Prefer")       or line:match("^Do not")
         or line:match("^After") then
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesText", lnum, 0, -1)
     end
   end
+  flush_code()
 end
 
 -- ── Modal state ───────────────────────────────────────────────────────────────
@@ -241,30 +302,34 @@ local function show_preview(idx)
 
   modal.preview_idx = idx
   local lines = {}
+  local function add(s) lines[#lines + 1] = s end
 
-  for _, l in ipairs(vim.split(note.note, "\n", { plain = true })) do
-    lines[#lines + 1] = l
-  end
+  add("Note:")
+  for _, l in ipairs(vim.split(note.note, "\n", { plain = true })) do add(l) end
 
   if note.code then
-    lines[#lines + 1] = ""
-    lines[#lines + 1] = "  ── selected code ──────────────────"
-    for _, cl in ipairs(vim.split(note.code, "\n", { plain = true })) do
-      lines[#lines + 1] = cl
-    end
+    add(""); add("Selected code:")
+    add("----- BEGIN SELECTED CODE -----")
+    for _, cl in ipairs(vim.split(note.code, "\n", { plain = true })) do add(cl) end
+    add("----- END SELECTED CODE -----")
   end
 
   vim.bo[modal.write_buf].modifiable = true
   vim.api.nvim_buf_set_lines(modal.write_buf, 0, -1, false, lines)
 
-  vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
+  -- apply label/sep highlights first (no numbered header so note_idx stays 0)
+  apply_prompt_highlights(modal.write_buf, lines, nil)
+
+  -- then apply treesitter to the code block if present
   if note.code then
-    local note_lc  = line_count(note.note)
-    local sep_lnum = note_lc + 1  -- 0-indexed: note lines + blank
-    vim.api.nvim_buf_add_highlight(modal.write_buf, hl_ns, "AiNotesSep", sep_lnum, 0, -1)
-    local code_lines = vim.split(note.code, "\n", { plain = true })
-    for j = 0, #code_lines - 1 do
-      vim.api.nvim_buf_add_highlight(modal.write_buf, hl_ns, "AiNotesCode", sep_lnum + 1 + j, 0, -1)
+    local lang = lang_from_path(note.file)
+    -- find where BEGIN line is in our lines array
+    local begin_lnum = nil
+    for i, l in ipairs(lines) do
+      if l == "----- BEGIN SELECTED CODE -----" then begin_lnum = i - 1; break end
+    end
+    if begin_lnum then
+      syntax_highlight_code(modal.write_buf, note.code, begin_lnum + 1, lang)
     end
   end
 
@@ -354,7 +419,7 @@ local function open_prompt_review(notes)
   vim.bo[buf].swapfile   = false
   vim.bo[buf].modifiable = true
   vim.bo[buf].filetype   = "text"
-  apply_prompt_highlights(buf, lines)
+  apply_prompt_highlights(buf, lines, notes)
 
   local win = vim.api.nvim_open_win(buf, true, {
     relative  = "editor",
@@ -383,7 +448,7 @@ local function open_prompt_review(notes)
   vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
     buffer   = buf,
     callback = function()
-      apply_prompt_highlights(buf, vim.api.nvim_buf_get_lines(buf, 0, -1, false))
+      apply_prompt_highlights(buf, vim.api.nvim_buf_get_lines(buf, 0, -1, false), notes)
     end,
   })
 

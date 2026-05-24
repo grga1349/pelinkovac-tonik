@@ -64,9 +64,9 @@ vim.keymap.set("n", "<leader>?", function()
 end, { desc = "ptx keybindings" })
 
 local colors = {
-  bg         = "#100F0D",
-  bg_alt     = "#1B1916",
-  bg_surface = "#242119",
+  bg         = "#1B1916",
+  bg_alt     = "#242119",
+  bg_surface = "#2D2A25",
   fg         = "#E8E2D9",
   muted      = "#A09890",
   subtle     = "#6B6560",
@@ -114,7 +114,7 @@ local function apply_theme_overrides()
   set(0, "String", { fg = colors.orange })
   set(0, "Character", { fg = colors.orange })
   set(0, "Number", { fg = colors.light_green })
-  set(0, "Boolean", { fg = colors.blue })
+  set(0, "Boolean", { fg = colors.purple })
   set(0, "Float", { fg = colors.light_green })
   set(0, "Function", { fg = colors.yellow })
   set(0, "Identifier", { fg = colors.cyan })
@@ -132,7 +132,7 @@ local function apply_theme_overrides()
   set(0, "@string", { fg = colors.orange })
   set(0, "@string.escape", { fg = colors.cyan })
   set(0, "@number", { fg = colors.light_green })
-  set(0, "@boolean", { fg = colors.blue })
+  set(0, "@boolean", { fg = colors.purple })
   set(0, "@function", { fg = colors.yellow })
   set(0, "@function.call", { fg = colors.yellow })
   set(0, "@function.builtin", { fg = colors.yellow })
@@ -143,15 +143,17 @@ local function apply_theme_overrides()
   set(0, "@variable.member", { fg = colors.cyan })
   set(0, "@property", { fg = colors.cyan })
   set(0, "@keyword", { fg = colors.blue })
-  set(0, "@keyword.function", { fg = colors.blue })
+  set(0, "@keyword.function", { fg = colors.purple })
   set(0, "@keyword.return", { fg = colors.purple })
+  set(0, "@keyword.conditional", { fg = colors.purple })
+  set(0, "@keyword.repeat", { fg = colors.purple })
   set(0, "@conditional", { fg = colors.purple })
   set(0, "@repeat", { fg = colors.purple })
   set(0, "@operator", { fg = colors.fg })
   set(0, "@type", { fg = colors.green })
   set(0, "@type.builtin", { fg = colors.green })
   set(0, "@constant", { fg = colors.light_green })
-  set(0, "@constant.builtin", { fg = colors.blue })
+  set(0, "@constant.builtin", { fg = colors.purple })
   set(0, "@constructor", { fg = colors.green })
   set(0, "@tag", { fg = colors.blue })
   set(0, "@tag.attribute", { fg = colors.cyan })
