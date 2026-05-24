@@ -299,14 +299,14 @@ require("lazy").setup({
     event = { "BufReadPre", "BufNewFile" },
     keys = {
       {
-        "<leader>gb",
+        "<leader>gl",
         function()
           require("gitsigns").toggle_current_line_blame()
         end,
         desc = "Toggle inline git blame",
       },
       {
-        "<leader>gB",
+        "<leader>gL",
         function()
           require("gitsigns").blame_line({ full = true })
         end,
@@ -396,7 +396,7 @@ require("lazy").setup({
           changedelete = { text = "~" },
           untracked = { text = "+" },
         },
-        current_line_blame = false,
+        current_line_blame = true,
         current_line_blame_opts = {
           delay = 300,
           virt_text_pos = "eol",
