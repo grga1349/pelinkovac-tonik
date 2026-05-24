@@ -46,7 +46,7 @@ font-size=16
 background=#1e1e1e
 foreground=#d4d4d4
 cursor-color=#d4d4d4
-selection-background=#d4d4d433
+selection-background=#d4d4d4
 palette=0=#000000
 palette=1=#cd3131
 palette=2=#0dbc79
