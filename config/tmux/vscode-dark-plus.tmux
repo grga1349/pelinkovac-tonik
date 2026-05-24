@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-bg="#1B1916"
-bg_alt="#242119"
-fg="#E8E2D9"
-accent="#D4935A"
-blue="#B87575"
-yellow="#D0A15A"
+bg="#1e1e1e"
+bg_alt="#252526"
+fg="#d4d4d4"
+accent="#2472c8"
+blue="#2472c8"
+yellow="#e5e510"
 status_fg="$accent"
 
 get() {

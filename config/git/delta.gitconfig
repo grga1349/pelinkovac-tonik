@@ -3,33 +3,33 @@
     line-numbers = true
     side-by-side = true
 
-    # removed lines — ef-danger wash
-    minus-style = "#B87575" "#2A1616"
-    minus-emph-style = "#D4A8A8" "#3D1515"
-    minus-non-emph-style = dim "#2A1616"
+    # removed lines
+    minus-style = "#f14c4c" "#2d1212"
+    minus-emph-style = "#f14c4c" "#3d1515"
+    minus-non-emph-style = dim "#2d1212"
 
-    # added lines — ef-success wash
-    plus-style = "#7FA36B" "#1E281A"
-    plus-emph-style = "#9DB88C" "#253520"
-    plus-non-emph-style = dim "#1E281A"
+    # added lines
+    plus-style = "#23d18b" "#0d2818"
+    plus-emph-style = "#23d18b" "#163520"
+    plus-non-emph-style = dim "#0d2818"
 
     zero-style = syntax
 
-    # file header — ef-accent terracotta
-    file-style = "#D4935A" bold
-    file-decoration-style = "#3D3930" underline
+    # file header
+    file-style = "#dcdcaa" bold
+    file-decoration-style = "#3e3e3e" underline
 
     # hunk header
     hunk-header-style = file line-number syntax
-    hunk-header-decoration-style = "#3D3930" box
-    hunk-header-file-style = "#E5B98E"
-    hunk-header-line-number-style = "#A09890"
+    hunk-header-decoration-style = "#3e3e3e" box
+    hunk-header-file-style = "#ce9178"
+    hunk-header-line-number-style = "#858585"
 
     # line numbers
-    line-numbers-left-style = "#6B6560"
-    line-numbers-right-style = "#6B6560"
-    line-numbers-zero-style = "#3D3930"
-    line-numbers-minus-style = "#B87575"
-    line-numbers-plus-style = "#7FA36B"
+    line-numbers-left-style = "#858585"
+    line-numbers-right-style = "#858585"
+    line-numbers-zero-style = "#3e3e3e"
+    line-numbers-minus-style = "#f14c4c"
+    line-numbers-plus-style = "#23d18b"
     line-numbers-left-format = " {nm:>4} │"
     line-numbers-right-format = " {np:>4} │"

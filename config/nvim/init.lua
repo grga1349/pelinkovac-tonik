@@ -64,21 +64,21 @@ vim.keymap.set("n", "<leader>?", function()
 end, { desc = "ptx keybindings" })
 
 local colors = {
-  bg         = "#1B1916",
-  bg_alt     = "#242119",
-  bg_surface = "#2D2A25",
-  fg         = "#E8E2D9",
-  muted      = "#A09890",
-  subtle     = "#6B6560",
-  line       = "#3D3930",
-  blue       = "#B8A0CC",
-  cyan       = "#8AABB0",
-  green      = "#7FA36B",
-  light_green = "#D0A15A",
-  orange     = "#D4935A",
-  red        = "#B87575",
-  yellow     = "#E5B98E",
-  purple     = "#B87575",
+  bg         = "#1e1e1e",
+  bg_alt     = "#252526",
+  bg_surface = "#3a3d41",
+  fg         = "#d4d4d4",
+  muted      = "#858585",
+  subtle     = "#3e3e3e",
+  line       = "#3e3e3e",
+  blue       = "#569cd6",
+  cyan       = "#4ec9b0",
+  green      = "#6a9955",
+  light_green = "#b5cea8",
+  orange     = "#ce9178",
+  red        = "#f44747",
+  yellow     = "#dcdcaa",
+  purple     = "#c586c0",
 }
 
 local function apply_theme_overrides()
@@ -89,7 +89,7 @@ local function apply_theme_overrides()
   if vim.fn.exists("syntax_on") == 1 then
     vim.cmd("syntax reset")
   end
-  vim.g.colors_name = "ef-dark"
+  vim.g.colors_name = "vscode-dark-plus"
 
   set(0, "Normal", { fg = colors.fg, bg = colors.bg })
   set(0, "NormalNC", { fg = colors.fg, bg = colors.bg })
@@ -118,13 +118,13 @@ local function apply_theme_overrides()
   set(0, "Float", { fg = colors.light_green })
   set(0, "Function", { fg = colors.yellow })
   set(0, "Identifier", { fg = colors.cyan })
-  set(0, "Keyword", { fg = colors.red })
-  set(0, "Statement", { fg = colors.red })
-  set(0, "Conditional", { fg = colors.red })
-  set(0, "Repeat", { fg = colors.red })
+  set(0, "Keyword", { fg = colors.blue })
+  set(0, "Statement", { fg = colors.blue })
+  set(0, "Conditional", { fg = colors.blue })
+  set(0, "Repeat", { fg = colors.blue })
   set(0, "Operator", { fg = colors.fg })
-  set(0, "Type", { fg = colors.green })
-  set(0, "PreProc", { fg = colors.red })
+  set(0, "Type", { fg = colors.cyan })
+  set(0, "PreProc", { fg = colors.blue })
   set(0, "Special", { fg = colors.yellow })
   set(0, "Constant", { fg = colors.light_green })
 
@@ -142,22 +142,22 @@ local function apply_theme_overrides()
   set(0, "@variable.builtin", { fg = colors.cyan, italic = true })
   set(0, "@variable.member", { fg = colors.cyan })
   set(0, "@property", { fg = colors.cyan })
-  set(0, "@keyword",                      { fg = colors.red })
-  set(0, "@keyword.type",                 { fg = colors.red })
-  set(0, "@keyword.import",               { fg = colors.red })
-  set(0, "@keyword.coroutine",            { fg = colors.red })
-  set(0, "@keyword.operator",             { fg = colors.red })
-  set(0, "@keyword.modifier",             { fg = colors.red })
-  set(0, "@keyword.directive",            { fg = colors.red })
-  set(0, "@keyword.exception",            { fg = colors.red })
-  set(0, "@keyword.declaration",          { fg = colors.red })
-  set(0, "@keyword.function",             { fg = colors.red })
-  set(0, "@keyword.return",               { fg = colors.red })
-  set(0, "@keyword.conditional",          { fg = colors.red })
-  set(0, "@keyword.conditional.ternary",  { fg = colors.red })
-  set(0, "@keyword.repeat",               { fg = colors.red })
-  set(0, "@conditional", { fg = colors.red })
-  set(0, "@repeat", { fg = colors.red })
+  set(0, "@keyword",                      { fg = colors.blue })
+  set(0, "@keyword.type",                 { fg = colors.blue })
+  set(0, "@keyword.import",               { fg = colors.blue })
+  set(0, "@keyword.coroutine",            { fg = colors.blue })
+  set(0, "@keyword.operator",             { fg = colors.blue })
+  set(0, "@keyword.modifier",             { fg = colors.blue })
+  set(0, "@keyword.directive",            { fg = colors.blue })
+  set(0, "@keyword.exception",            { fg = colors.blue })
+  set(0, "@keyword.declaration",          { fg = colors.blue })
+  set(0, "@keyword.function",             { fg = colors.blue })
+  set(0, "@keyword.return",               { fg = colors.blue })
+  set(0, "@keyword.conditional",          { fg = colors.blue })
+  set(0, "@keyword.conditional.ternary",  { fg = colors.blue })
+  set(0, "@keyword.repeat",               { fg = colors.blue })
+  set(0, "@conditional", { fg = colors.blue })
+  set(0, "@repeat", { fg = colors.blue })
   set(0, "@operator", { fg = colors.fg })
   set(0, "@type", { fg = colors.green })
   set(0, "@type.builtin", { fg = colors.green })
