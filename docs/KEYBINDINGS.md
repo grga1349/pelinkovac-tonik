@@ -29,7 +29,7 @@
 - Rename: `Space r n`
 - Code action: `Space c a`
 - Format: `Space f`
-- Git blame: shown in the statusline as current commit and author
+- Git blame: shown in the statusline as current commit, author, and commit message; click the commit id to copy it
 - Preview hunk: `Space g p`
 - Stage/reset hunk: `Space g s`, `Space g r`
 - Git diff: `Space g d`

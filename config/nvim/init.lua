@@ -21,6 +21,7 @@ vim.opt.timeoutlen = 400
 vim.opt.colorcolumn = "120"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.autoread = true
+vim.opt.mouse = "a"
 vim.opt.laststatus = 2
 
 vim.filetype.add({
@@ -87,6 +88,31 @@ local function statusline_escape(value)
   return tostring(value or ""):gsub("%%", "%%%%")
 end
 
+local function truncate_statusline_text(value, max_width)
+  value = tostring(value or "")
+  if vim.fn.strdisplaywidth(value) <= max_width then
+    return value
+  end
+
+  local truncated_width = max_width - 3
+  local truncated = vim.fn.strcharpart(value, 0, truncated_width)
+  while vim.fn.strdisplaywidth(truncated) > truncated_width do
+    truncated = vim.fn.strcharpart(truncated, 0, vim.fn.strchars(truncated) - 1)
+  end
+  return truncated .. "..."
+end
+
+function _G.ptx_copy_blame_sha()
+  local blame = vim.b.gitsigns_blame_line_dict
+  if type(blame) ~= "table" or type(blame.sha) ~= "string" or blame.sha:match("^0+$") then
+    return
+  end
+
+  pcall(vim.fn.setreg, '"', blame.sha)
+  pcall(vim.fn.setreg, "+", blame.sha)
+  vim.notify("Copied commit " .. blame.abbrev_sha, vim.log.levels.INFO)
+end
+
 local function git_blame_status()
   local blame = vim.b.gitsigns_blame_line_dict
   if type(blame) ~= "table" then
@@ -95,14 +121,21 @@ local function git_blame_status()
 
   local author = blame.author
   local sha = blame.abbrev_sha
+  local summary = truncate_statusline_text(blame.summary, 40)
   if type(author) ~= "string" or author == "" then
     return ""
   end
   if type(sha) ~= "string" or sha == "" or sha:match("^0+$") then
-    return "uncommitted " .. author
+    return "uncommitted " .. statusline_escape(author)
   end
 
-  return sha .. " " .. author
+  local commit = "%@v:lua.ptx_copy_blame_sha@" .. statusline_escape(sha) .. "%T"
+  local text = commit .. " " .. statusline_escape(author)
+  if summary ~= "" then
+    text = text .. " - " .. statusline_escape(summary)
+  end
+
+  return text
 end
 
 function _G.ptx_statusline()
@@ -126,7 +159,7 @@ function _G.ptx_statusline()
   local right = {}
   local blame = git_blame_status()
   if blame ~= "" then
-    right[#right + 1] = statusline_escape(blame)
+    right[#right + 1] = blame
   end
   if vim.bo.filetype ~= "" and vim.bo.filetype ~= "NvimTree" then
     right[#right + 1] = statusline_escape(vim.bo.filetype)
