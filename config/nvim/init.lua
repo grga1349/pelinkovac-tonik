@@ -126,10 +126,10 @@ function _G.ptx_statusline()
   local right = {}
   local blame = git_blame_status()
   if blame ~= "" then
-    table.insert(right, statusline_escape(blame))
+    right[#right + 1] = statusline_escape(blame)
   end
   if vim.bo.filetype ~= "" and vim.bo.filetype ~= "NvimTree" then
-    table.insert(right, statusline_escape(vim.bo.filetype))
+    right[#right + 1] = statusline_escape(vim.bo.filetype)
   end
 
   return left .. "%=" .. table.concat(right, "  ") .. " "
