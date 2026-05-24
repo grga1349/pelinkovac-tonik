@@ -92,6 +92,12 @@ install_configs() {
   install_file "$repo_dir/config/nvim/lua/ai_notes.lua" "$HOME/.config/nvim/lua/ai_notes.lua"
   install_file "$repo_dir/config/tmux/tmux.conf" "$HOME/.tmux.conf"
   install_file "$repo_dir/config/tmux/vscode-dark-plus.tmux" "$HOME/.config/tmux/vscode-dark-plus.tmux"
+  install_file "$repo_dir/config/diffnav/config.yml" "$HOME/.config/diffnav/config.yml"
+  install_file "$repo_dir/config/git/delta.gitconfig" "$HOME/.config/git/delta.gitconfig"
+
+  if ! grep -Fq "delta.gitconfig" "$HOME/.gitconfig" 2>/dev/null; then
+    git config --global include.path "$HOME/.config/git/delta.gitconfig"
+  fi
 
   case "$(uname -s)" in
     Darwin)
@@ -111,7 +117,7 @@ install_completion
 
 if [[ "$install_dotfiles" -eq 1 ]]; then
   install_configs
-  printf '%s\n' 'Installed Neovim, tmux, and Ghostty config.'
+  printf '%s\n' 'Installed Neovim, tmux, Ghostty, diffnav, and delta config.'
   if command -v tmux &>/dev/null && tmux info &>/dev/null 2>&1; then
     tmux source-file ~/.tmux.conf
     printf '%s\n' 'Reloaded active tmux sessions.'

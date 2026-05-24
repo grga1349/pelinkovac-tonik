@@ -67,11 +67,11 @@ end
 -- ── Highlights ────────────────────────────────────────────────────────────────
 
 local function setup_highlights()
-  vim.api.nvim_set_hl(0, "AiNotesIndex",    { fg = "#569cd6", bold = true })
-  vim.api.nvim_set_hl(0, "AiNotesLocation", { fg = "#9cdcfe" })
-  vim.api.nvim_set_hl(0, "AiNotesText",     { fg = "#858585" })
-  vim.api.nvim_set_hl(0, "AiNotesCode",     { fg = "#6a9955", italic = true })
-  vim.api.nvim_set_hl(0, "AiNotesSep",      { fg = "#3c3c3c" })
+  vim.api.nvim_set_hl(0, "AiNotesIndex",    { fg = "#B8A0CC", bold = true })
+  vim.api.nvim_set_hl(0, "AiNotesLocation", { fg = "#8AABB0" })
+  vim.api.nvim_set_hl(0, "AiNotesText",     { fg = "#A09890" })
+  vim.api.nvim_set_hl(0, "AiNotesCode",     { fg = "#7FA36B", italic = true })
+  vim.api.nvim_set_hl(0, "AiNotesSep",      { fg = "#3D3930" })
 end
 
 -- ── Prompt generation ─────────────────────────────────────────────────────────

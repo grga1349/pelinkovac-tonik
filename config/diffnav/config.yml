@@ -1,0 +1,9 @@
+ui:
+  hideHeader: true
+  hideFooter: false
+  showFileTree: true
+  fileTreeWidth: 28
+  icons: nerd-fonts-filetype
+  colorFileNames: true
+  showDiffStats: true
+  sideBySide: true

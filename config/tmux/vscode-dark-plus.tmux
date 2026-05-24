@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-bg="#1e1e1e"
-bg_alt="#2d2d30"
-fg="#d4d4d4"
-blue="#569cd6"
-yellow="#dcdcaa"
-status_fg="$blue"
+bg="#100F0D"
+bg_alt="#1B1916"
+fg="#E8E2D9"
+accent="#D4935A"
+blue="#B8A0CC"
+yellow="#D0A15A"
+status_fg="$accent"
 
 get() {
   local option="$1"
@@ -41,9 +42,9 @@ tmux set-option -gq "status-format[0]" "#[fill=$status_fg]#[align=left range=lef
 setg message-style "fg=$bg,bg=$status_fg,bold"
 setg message-command-style "fg=$bg,bg=$status_fg"
 setg pane-border-style "fg=$bg_alt,bg=$bg"
-setg pane-active-border-style "fg=$blue,bg=$bg"
+setg pane-active-border-style "fg=$accent,bg=$bg"
 setg display-panes-active-colour "$yellow"
-setg display-panes-colour "$blue"
+setg display-panes-colour "$accent"
 
 setw window-status-separator "#[fg=$bg,bg=$status_fg] "
 setw window-style "fg=$fg,bg=$bg"

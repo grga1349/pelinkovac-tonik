@@ -64,18 +64,21 @@ vim.keymap.set("n", "<leader>?", function()
 end, { desc = "ptx keybindings" })
 
 local colors = {
-  bg = "#1e1e1e",
-  bg_alt = "#2d2d30",
-  fg = "#d4d4d4",
-  muted = "#6a9955",
-  blue = "#569cd6",
-  cyan = "#9cdcfe",
-  green = "#6a9955",
-  light_green = "#b5cea8",
-  orange = "#ce9178",
-  red = "#f44747",
-  yellow = "#dcdcaa",
-  purple = "#c586c0",
+  bg         = "#100F0D",
+  bg_alt     = "#1B1916",
+  bg_surface = "#242119",
+  fg         = "#E8E2D9",
+  muted      = "#A09890",
+  subtle     = "#6B6560",
+  line       = "#3D3930",
+  blue       = "#B8A0CC",
+  cyan       = "#8AABB0",
+  green      = "#7FA36B",
+  light_green = "#D0A15A",
+  orange     = "#D4935A",
+  red        = "#B87575",
+  yellow     = "#E5B98E",
+  purple     = "#C49AB8",
 }
 
 local function apply_theme_overrides()
@@ -86,28 +89,28 @@ local function apply_theme_overrides()
   if vim.fn.exists("syntax_on") == 1 then
     vim.cmd("syntax reset")
   end
-  vim.g.colors_name = "vscode-dark-plus"
+  vim.g.colors_name = "ef-dark"
 
   set(0, "Normal", { fg = colors.fg, bg = colors.bg })
   set(0, "NormalNC", { fg = colors.fg, bg = colors.bg })
   set(0, "NormalFloat", { fg = colors.fg, bg = colors.bg })
-  set(0, "FloatBorder", { fg = colors.bg_alt, bg = colors.bg })
-  set(0, "FloatTitle",  { fg = colors.bg_alt, bg = colors.bg })
+  set(0, "FloatBorder", { fg = colors.line, bg = colors.bg })
+  set(0, "FloatTitle",  { fg = colors.line, bg = colors.bg })
   set(0, "SignColumn", { bg = colors.bg })
   set(0, "EndOfBuffer", { fg = colors.bg, bg = colors.bg })
   set(0, "LineNr", { fg = colors.muted, bg = colors.bg })
   set(0, "CursorLine", { bg = colors.bg })
   set(0, "CursorLineNr", { fg = colors.fg, bg = colors.bg, bold = true })
-  set(0, "ColorColumn", { bg = colors.bg_alt })
-  set(0, "WinSeparator", { fg = colors.bg_alt, bg = colors.bg })
-  set(0, "VertSplit", { fg = colors.bg_alt, bg = colors.bg })
-  set(0, "Visual", { bg = colors.bg_alt })
+  set(0, "ColorColumn", { bg = colors.bg_surface })
+  set(0, "WinSeparator", { fg = colors.line, bg = colors.bg })
+  set(0, "VertSplit", { fg = colors.line, bg = colors.bg })
+  set(0, "Visual", { bg = colors.bg_surface })
   set(0, "Pmenu", { fg = colors.fg, bg = colors.bg })
   set(0, "PmenuSel", { fg = colors.fg, bg = colors.bg_alt })
   set(0, "StatusLine", { fg = colors.fg, bg = colors.bg })
   set(0, "StatusLineNC", { fg = colors.muted, bg = colors.bg })
 
-  set(0, "Comment", { fg = colors.muted, italic = true })
+  set(0, "Comment", { fg = colors.subtle, italic = true })
   set(0, "String", { fg = colors.orange })
   set(0, "Character", { fg = colors.orange })
   set(0, "Number", { fg = colors.light_green })
@@ -120,12 +123,12 @@ local function apply_theme_overrides()
   set(0, "Conditional", { fg = colors.purple })
   set(0, "Repeat", { fg = colors.purple })
   set(0, "Operator", { fg = colors.fg })
-  set(0, "Type", { fg = "#4ec9b0" })
+  set(0, "Type", { fg = colors.green })
   set(0, "PreProc", { fg = colors.blue })
   set(0, "Special", { fg = colors.yellow })
   set(0, "Constant", { fg = colors.light_green })
 
-  set(0, "@comment", { fg = colors.muted, italic = true })
+  set(0, "@comment", { fg = colors.subtle, italic = true })
   set(0, "@string", { fg = colors.orange })
   set(0, "@string.escape", { fg = colors.cyan })
   set(0, "@number", { fg = colors.light_green })
@@ -145,19 +148,19 @@ local function apply_theme_overrides()
   set(0, "@conditional", { fg = colors.purple })
   set(0, "@repeat", { fg = colors.purple })
   set(0, "@operator", { fg = colors.fg })
-  set(0, "@type", { fg = "#4ec9b0" })
-  set(0, "@type.builtin", { fg = "#4ec9b0" })
+  set(0, "@type", { fg = colors.green })
+  set(0, "@type.builtin", { fg = colors.green })
   set(0, "@constant", { fg = colors.light_green })
   set(0, "@constant.builtin", { fg = colors.blue })
-  set(0, "@constructor", { fg = "#4ec9b0" })
+  set(0, "@constructor", { fg = colors.green })
   set(0, "@tag", { fg = colors.blue })
   set(0, "@tag.attribute", { fg = colors.cyan })
-  set(0, "@tag.delimiter", { fg = colors.muted })
+  set(0, "@tag.delimiter", { fg = colors.subtle })
 
   set(0, "NvimTreeNormal", { fg = colors.fg, bg = colors.bg })
   set(0, "NvimTreeNormalNC", { fg = colors.fg, bg = colors.bg })
   set(0, "NvimTreeEndOfBuffer", { fg = colors.bg, bg = colors.bg })
-  set(0, "NvimTreeWinSeparator", { fg = colors.bg_alt, bg = colors.bg })
+  set(0, "NvimTreeWinSeparator", { fg = colors.line, bg = colors.bg })
   set(0, "NvimTreeCursorLine", { bg = colors.bg_alt })
   set(0, "NvimTreeFolderName", { fg = colors.cyan })
   set(0, "NvimTreeOpenedFolderName", { fg = colors.cyan, bold = true })
@@ -166,9 +169,9 @@ local function apply_theme_overrides()
   set(0, "NvimTreeGitDeleted", { fg = colors.red })
 
   set(0, "TelescopeNormal", { fg = colors.fg, bg = colors.bg })
-  set(0, "TelescopeBorder", { fg = colors.bg_alt, bg = colors.bg })
+  set(0, "TelescopeBorder", { fg = colors.line, bg = colors.bg })
   set(0, "TelescopePromptNormal", { fg = colors.fg, bg = colors.bg })
-  set(0, "TelescopePromptBorder", { fg = colors.bg_alt, bg = colors.bg })
+  set(0, "TelescopePromptBorder", { fg = colors.line, bg = colors.bg })
   set(0, "TelescopeSelection", { fg = colors.fg, bg = colors.bg_alt })
   set(0, "TelescopeMatching", { fg = colors.yellow, bold = true })
 end
