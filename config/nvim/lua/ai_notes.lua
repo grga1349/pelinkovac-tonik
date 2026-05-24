@@ -174,7 +174,7 @@ local function apply_prompt_highlights(buf, lines, notes, conceal_markers)
       current_lang = notes and notes[note_idx] and lang_from_path(notes[note_idx].file)
       local dot_space = line:find("%. ")
       vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesIndex",    lnum, 0, dot_space + 1)
-      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLocation", lnum, dot_space + 2, -1)
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLocation", lnum, dot_space + 1, -1)
     elseif line == "----- BEGIN SELECTED CODE -----" then
       if conceal_markers then
         vim.api.nvim_buf_set_extmark(buf, hl_ns, lnum, 0, { end_col = #line, conceal = "" })
