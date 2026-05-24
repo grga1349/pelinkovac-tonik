@@ -67,11 +67,13 @@ end
 -- ── Highlights ────────────────────────────────────────────────────────────────
 
 local function setup_highlights()
-  vim.api.nvim_set_hl(0, "AiNotesIndex",    { fg = "#B8A0CC", bold = true })
-  vim.api.nvim_set_hl(0, "AiNotesLocation", { fg = "#8AABB0" })
-  vim.api.nvim_set_hl(0, "AiNotesText",     { fg = "#A09890" })
-  vim.api.nvim_set_hl(0, "AiNotesCode",     { fg = "#7FA36B", italic = true })
-  vim.api.nvim_set_hl(0, "AiNotesSep",      { fg = "#3D3930" })
+  vim.api.nvim_set_hl(0, "AiNotesIndex",         { fg = "#B8A0CC", bold = true })
+  vim.api.nvim_set_hl(0, "AiNotesLocation",       { fg = "#8AABB0" })
+  vim.api.nvim_set_hl(0, "AiNotesText",           { fg = "#A09890" })
+  vim.api.nvim_set_hl(0, "AiNotesCode",           { fg = "#7FA36B", italic = true })
+  vim.api.nvim_set_hl(0, "AiNotesSep",            { fg = "#3D3930" })
+  vim.api.nvim_set_hl(0, "AiNotesSectionHeader",  { fg = "#D4935A", bold = true })
+  vim.api.nvim_set_hl(0, "AiNotesLabel",          { fg = "#D0A15A" })
 end
 
 -- ── Prompt generation ─────────────────────────────────────────────────────────
@@ -101,6 +103,35 @@ local function build_prompt_lines(notes)
     add("")
   end
   return lines
+end
+
+local function apply_prompt_highlights(buf, lines)
+  vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
+  local in_code = false
+  for i, line in ipairs(lines) do
+    local lnum = i - 1
+    if line == "TASK" or line == "NOTES" then
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSectionHeader", lnum, 0, -1)
+    elseif line == "Note:" or line == "Selected code:" then
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLabel", lnum, 0, -1)
+    elseif line:match("^%d+%. ") then
+      local dot_space = line:find("%. ")
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesIndex",    lnum, 0, dot_space + 1)
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesLocation", lnum, dot_space + 2, -1)
+    elseif line == "----- BEGIN SELECTED CODE -----" then
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
+      in_code = true
+    elseif line == "----- END SELECTED CODE -----" then
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesSep", lnum, 0, -1)
+      in_code = false
+    elseif in_code then
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesCode", lnum, 0, -1)
+    elseif line:match("^Use the notes") or line:match("^Preserve")
+        or line:match("^Prefer")       or line:match("^Do not")
+        or line:match("^After") then
+      vim.api.nvim_buf_add_highlight(buf, hl_ns, "AiNotesText", lnum, 0, -1)
+    end
+  end
 end
 
 -- ── Modal state ───────────────────────────────────────────────────────────────
@@ -228,8 +259,13 @@ local function show_preview(idx)
 
   vim.api.nvim_buf_clear_namespace(modal.write_buf, hl_ns, 0, -1)
   if note.code then
-    local sep_line = line_count(note.note) + 1  -- 0-indexed: note lines + blank
-    vim.api.nvim_buf_add_highlight(modal.write_buf, hl_ns, "AiNotesSep", sep_line, 0, -1)
+    local note_lc  = line_count(note.note)
+    local sep_lnum = note_lc + 1  -- 0-indexed: note lines + blank
+    vim.api.nvim_buf_add_highlight(modal.write_buf, hl_ns, "AiNotesSep", sep_lnum, 0, -1)
+    local code_lines = vim.split(note.code, "\n", { plain = true })
+    for j = 0, #code_lines - 1 do
+      vim.api.nvim_buf_add_highlight(modal.write_buf, hl_ns, "AiNotesCode", sep_lnum + 1 + j, 0, -1)
+    end
   end
 
   update_write_title()
@@ -318,6 +354,7 @@ local function open_prompt_review(notes)
   vim.bo[buf].swapfile   = false
   vim.bo[buf].modifiable = true
   vim.bo[buf].filetype   = "text"
+  apply_prompt_highlights(buf, lines)
 
   local win = vim.api.nvim_open_win(buf, true, {
     relative  = "editor",
@@ -342,6 +379,13 @@ local function open_prompt_review(notes)
     end
     pcall(vim.api.nvim_win_close, win, true)
   end
+
+  vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+    buffer   = buf,
+    callback = function()
+      apply_prompt_highlights(buf, vim.api.nvim_buf_get_lines(buf, 0, -1, false))
+    end,
+  })
 
   local opts = { buffer = buf, nowait = true, silent = true }
   vim.keymap.set("n", "<CR>",  copy_and_close,                                        opts)

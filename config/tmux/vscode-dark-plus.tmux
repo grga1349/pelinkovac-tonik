@@ -4,7 +4,7 @@ bg="#100F0D"
 bg_alt="#1B1916"
 fg="#E8E2D9"
 accent="#D4935A"
-blue="#B8A0CC"
+blue="#B87575"
 yellow="#D0A15A"
 status_fg="$accent"
 

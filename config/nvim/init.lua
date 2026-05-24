@@ -78,7 +78,7 @@ local colors = {
   orange     = "#D4935A",
   red        = "#B87575",
   yellow     = "#E5B98E",
-  purple     = "#C49AB8",
+  purple     = "#B87575",
 }
 
 local function apply_theme_overrides()
